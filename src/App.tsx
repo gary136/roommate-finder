@@ -1,26 +1,46 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import BackgroundShapes from './components/BackgroundShapes';
+import Header from './components/Header';
+import SearchSection from './components/SearchSection';
+import Features from './components/Features';
+import RegistrationPage from './components/RegistrationPage';
+import { SelectedLocation } from './types';
+import './styles/globals.css';
+import './styles/App.css';
+import './styles/RegistrationPage.css';
 
-function App() {
+const App: React.FC = () => {
+  const [currentPage, setCurrentPage] = useState<'landing' | 'registration'>('landing');
+  const [selectedLocations, setSelectedLocations] = useState<SelectedLocation[]>([]);
+
+  const handleSearch = (locations: SelectedLocation[]) => {
+    setSelectedLocations(locations);
+    setCurrentPage('registration');
+  };
+
+  const handleBack = () => {
+    setCurrentPage('landing');
+  };
+
+  if (currentPage === 'registration') {
+    return (
+      <RegistrationPage 
+        initialLocations={selectedLocations} 
+        onBack={handleBack}
+      />
+    );
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="container">
+      <BackgroundShapes />
+      <Header />
+      <main className="main-content">
+        <SearchSection onSearch={handleSearch} />
+      </main>
+      <Features />
     </div>
   );
-}
+};
 
 export default App;
