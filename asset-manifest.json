@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/roommate-finder/static/css/main.b9f9fdf4.css",
+    "main.js": "/roommate-finder/static/js/main.b3702ec6.js",
+    "index.html": "/roommate-finder/index.html",
+    "main.b9f9fdf4.css.map": "/roommate-finder/static/css/main.b9f9fdf4.css.map",
+    "main.b3702ec6.js.map": "/roommate-finder/static/js/main.b3702ec6.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.b9f9fdf4.css",
+    "static/js/main.b3702ec6.js"
+  ]
+}
