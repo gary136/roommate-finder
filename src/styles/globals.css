@@ -11,7 +11,7 @@
     overflow-x: hidden;
   }
   
-  /* Animations */
+  /* Global Animations */
   @keyframes slideDown {
     from {
       opacity: 0;
@@ -34,6 +34,17 @@
     }
   }
   
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
   @keyframes float {
     0%, 100% { 
       transform: translateY(0px) rotate(0deg); 
@@ -41,4 +52,74 @@
     50% { 
       transform: translateY(-20px) rotate(180deg); 
     }
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Global utility classes */
+  .spinner {
+    animation: spin 1s linear infinite;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .loading-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  /* Error styles */
+  .error {
+    border: 2px solid #ff6b6b !important;
+    background-color: rgba(255, 107, 107, 0.1) !important;
+  }
+  
+  .error-message {
+    color: #ff6b6b;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    font-weight: 500;
+  }
+  
+  .form-hint {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    line-height: 1.4;
+  }
+  
+  /* Progress bar styles */
+  .progress-container {
+    margin: 1.5rem 0;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff6b6b, #ee5a52);
+    border-radius: 50px;
+    transition: width 0.3s ease;
+  }
+  
+  .progress-text {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: center;
+    display: block;
   }

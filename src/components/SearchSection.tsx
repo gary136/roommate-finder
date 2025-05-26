@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { cities, boroughs, neighborhoods } from '../data/locationData';
 import { SelectedLocation } from '../types';
+import { useLocationSelection } from '../hooks/useLocationSelection';
 
 interface SearchSectionProps {
   onSearch: (locations: SelectedLocation[]) => void;
@@ -8,52 +9,25 @@ interface SearchSectionProps {
 
 const SearchSection: React.FC<SearchSectionProps> = ({ onSearch }) => {
   const [selectedCity, setSelectedCity] = useState<string>('');
-  const [expandedBoroughs, setExpandedBoroughs] = useState<Set<string>>(new Set());
-  const [selectedLocations, setSelectedLocations] = useState<SelectedLocation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
+
+  const {
+    expandedBoroughs,
+    selectedLocations,
+    toggleBorough,
+    handleNeighborhoodToggle,
+    isNeighborhoodSelected,
+    removeLocation,
+    getBoroughLabel,
+    getNeighborhoodLabel,
+    isAtMaxSelection,
+  } = useLocationSelection({ maxSelections: 5 });
 
   const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     const value = e.target.value;
     setSelectedCity(value);
-    setExpandedBoroughs(new Set());
-    setSelectedLocations([]);
     setShowLocationSelector(value !== '');
-  };
-
-  const toggleBorough = (borough: string): void => {
-    const newExpanded = new Set(expandedBoroughs);
-    if (newExpanded.has(borough)) {
-      newExpanded.delete(borough);
-    } else {
-      newExpanded.add(borough);
-    }
-    setExpandedBoroughs(newExpanded);
-  };
-
-  const handleNeighborhoodToggle = (borough: string, neighborhood: string): void => {
-    const locationId = `${borough}-${neighborhood}`;
-    const existingIndex = selectedLocations.findIndex(loc => loc.id === locationId);
-    
-    if (existingIndex !== -1) {
-      // Remove if already selected
-      setSelectedLocations(selectedLocations.filter(loc => loc.id !== locationId));
-    } else if (selectedLocations.length < 5) {
-      // Add if under limit
-      setSelectedLocations([...selectedLocations, {
-        borough,
-        neighborhood,
-        id: locationId
-      }]);
-    }
-  };
-
-  const isNeighborhoodSelected = (borough: string, neighborhood: string): boolean => {
-    return selectedLocations.some(loc => loc.id === `${borough}-${neighborhood}`);
-  };
-
-  const removeLocation = (locationId: string): void => {
-    setSelectedLocations(selectedLocations.filter(loc => loc.id !== locationId));
   };
 
   const handleSearch = (): void => {
@@ -64,14 +38,6 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearch }) => {
         onSearch(selectedLocations);
       }, 1500);
     }
-  };
-
-  const getBoroughLabel = (value: string): string => {
-    return boroughs.find(b => b.value === value)?.label || value;
-  };
-
-  const getNeighborhoodLabel = (borough: string, neighborhood: string): string => {
-    return neighborhoods[borough]?.find(n => n.value === neighborhood)?.label || neighborhood;
   };
 
   return (
@@ -98,7 +64,9 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearch }) => {
             <span className="selected-count">Selected ({selectedLocations.length}/5):</span>
             {selectedLocations.map((location) => (
               <div key={location.id} className="location-tag">
-                <span>{getBoroughLabel(location.borough)} - {getNeighborhoodLabel(location.borough, location.neighborhood)}</span>
+                <span>
+                  {getBoroughLabel(location.borough)} - {getNeighborhoodLabel(location.borough, location.neighborhood)}
+                </span>
                 <button
                   onClick={() => removeLocation(location.id)}
                   className="remove-btn"
@@ -131,32 +99,33 @@ const SearchSection: React.FC<SearchSectionProps> = ({ onSearch }) => {
                 
                 {expandedBoroughs.has(borough.value) && (
                   <div className="neighborhood-list">
-                    {neighborhoods[borough.value]?.map((neighborhood) => (
-                      <label
-                        key={neighborhood.value}
-                        className={`neighborhood-item ${
-                          selectedLocations.length >= 5 && !isNeighborhoodSelected(borough.value, neighborhood.value)
-                            ? 'disabled'
-                            : ''
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isNeighborhoodSelected(borough.value, neighborhood.value)}
-                          onChange={() => handleNeighborhoodToggle(borough.value, neighborhood.value)}
-                          disabled={selectedLocations.length >= 5 && !isNeighborhoodSelected(borough.value, neighborhood.value)}
-                          className="neighborhood-checkbox"
-                        />
-                        <span className="neighborhood-label">{neighborhood.label}</span>
-                      </label>
-                    ))}
+                    {neighborhoods[borough.value]?.map((neighborhood) => {
+                      const isSelected = isNeighborhoodSelected(borough.value, neighborhood.value);
+                      const isDisabled = isAtMaxSelection() && !isSelected;
+                      
+                      return (
+                        <label
+                          key={neighborhood.value}
+                          className={`neighborhood-item ${isDisabled ? 'disabled' : ''}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleNeighborhoodToggle(borough.value, neighborhood.value)}
+                            disabled={isDisabled}
+                            className="neighborhood-checkbox"
+                          />
+                          <span className="neighborhood-label">{neighborhood.label}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                 )}
               </div>
             ))}
           </div>
           
-          {selectedLocations.length >= 5 && (
+          {isAtMaxSelection() && (
             <p className="max-selection-warning">
               Maximum of 5 locations reached. Remove a location to select more.
             </p>

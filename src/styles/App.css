@@ -303,18 +303,6 @@
     transform: none;
   }
   
-  .loading-state {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .spinner {
-    animation: spin 1s linear infinite;
-    width: 20px;
-    height: 20px;
-  }
-  
   /* Search Results */
   .search-results {
     margin-top: 2rem;
@@ -431,54 +419,6 @@
   
   .neighborhood-list::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.5);
-  }
-  
-  /* Animations */
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  
-  @keyframes float {
-    0%, 100% { 
-      transform: translateY(0px) rotate(0deg); 
-    }
-    50% { 
-      transform: translateY(-20px) rotate(180deg); 
-    }
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
   }
   
   /* Responsive */

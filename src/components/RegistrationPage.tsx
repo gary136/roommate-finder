@@ -1,205 +1,87 @@
-import React, { useState, useEffect } from 'react';
+// src/components/RegistrationPage.tsx
+
+import React, { useState } from 'react';
 import { SelectedLocation } from '../types';
-import { cities, boroughs, neighborhoods } from '../data/locationData';
+import { useLocationSelection } from '../hooks/useLocationSelection';
+import { useRegistrationForm } from '../hooks/useRegistrationForm';
+import { prepareSubmissionData, formatCurrency, calculateRecommendedRent } from '../utils/formUtils';
+import {
+  ethnicities,
+  occupations,
+  languages,
+  metroDistanceOptions,
+  religions,
+  sexualOrientations,
+  politicalViews,
+  lifestyleOptions,
+} from '../constants/formData';
+import { boroughs, neighborhoods } from '../data/locationData';
 
 interface RegistrationPageProps {
   initialLocations: SelectedLocation[];
   onBack: () => void;
 }
 
-// Data for dropdowns
-const ethnicities = [
-  { value: '', label: 'Select Ethnicity' },
-  { value: 'asian', label: 'Asian' },
-  { value: 'black', label: 'Black or African American' },
-  { value: 'hispanic', label: 'Hispanic or Latino' },
-  { value: 'white', label: 'White' },
-  { value: 'middle-eastern', label: 'Middle Eastern' },
-  { value: 'native-american', label: 'Native American' },
-  { value: 'pacific-islander', label: 'Pacific Islander' },
-  { value: 'mixed', label: 'Mixed/Multiple' },
-  { value: 'other', label: 'Other' },
-  { value: 'prefer-not-say', label: 'Prefer not to say' },
-];
-
-const occupations = [
-  { value: '', label: 'Select Occupation' },
-  { value: 'tech', label: 'Technology/IT' },
-  { value: 'finance', label: 'Finance/Banking' },
-  { value: 'healthcare', label: 'Healthcare' },
-  { value: 'education', label: 'Education' },
-  { value: 'legal', label: 'Legal' },
-  { value: 'media', label: 'Media/Entertainment' },
-  { value: 'arts', label: 'Arts/Creative' },
-  { value: 'hospitality', label: 'Hospitality/Tourism' },
-  { value: 'retail', label: 'Retail/Sales' },
-  { value: 'real-estate', label: 'Real Estate' },
-  { value: 'construction', label: 'Construction' },
-  { value: 'government', label: 'Government' },
-  { value: 'non-profit', label: 'Non-profit' },
-  { value: 'student', label: 'Student' },
-  { value: 'unemployed', label: 'Unemployed' },
-  { value: 'other', label: 'Other' },
-];
-
-const languages = [
-  { value: 'english', label: 'English' },
-  { value: 'spanish', label: 'Spanish' },
-  { value: 'chinese', label: 'Chinese (Mandarin)' },
-  { value: 'cantonese', label: 'Chinese (Cantonese)' },
-  { value: 'russian', label: 'Russian' },
-  { value: 'korean', label: 'Korean' },
-  { value: 'bengali', label: 'Bengali' },
-  { value: 'hindi', label: 'Hindi' },
-  { value: 'french', label: 'French' },
-  { value: 'arabic', label: 'Arabic' },
-  { value: 'hebrew', label: 'Hebrew' },
-  { value: 'italian', label: 'Italian' },
-  { value: 'portuguese', label: 'Portuguese' },
-  { value: 'japanese', label: 'Japanese' },
-  { value: 'polish', label: 'Polish' },
-  { value: 'german', label: 'German' },
-  { value: 'urdu', label: 'Urdu' },
-  { value: 'tagalog', label: 'Tagalog' },
-  { value: 'vietnamese', label: 'Vietnamese' },
-  { value: 'other', label: 'Other' },
-];
-
-const religions = [
-  { value: '', label: 'Select Religion' },
-  { value: 'christianity', label: 'Christianity' },
-  { value: 'judaism', label: 'Judaism' },
-  { value: 'islam', label: 'Islam' },
-  { value: 'hinduism', label: 'Hinduism' },
-  { value: 'buddhism', label: 'Buddhism' },
-  { value: 'atheist', label: 'Atheist' },
-  { value: 'agnostic', label: 'Agnostic' },
-  { value: 'spiritual', label: 'Spiritual but not religious' },
-  { value: 'other', label: 'Other' },
-  { value: 'prefer-not-say', label: 'Prefer not to say' },
-];
-
-const sexualOrientations = [
-  { value: '', label: 'Select Sexual Orientation' },
-  { value: 'straight', label: 'Straight/Heterosexual' },
-  { value: 'gay', label: 'Gay/Lesbian' },
-  { value: 'bisexual', label: 'Bisexual' },
-  { value: 'pansexual', label: 'Pansexual' },
-  { value: 'asexual', label: 'Asexual' },
-  { value: 'queer', label: 'Queer' },
-  { value: 'other', label: 'Other' },
-  { value: 'prefer-not-say', label: 'Prefer not to say' },
-];
-
-const politicalViews = [
-  { value: '', label: 'Select Political View' },
-  { value: 'very-liberal', label: 'Very Liberal' },
-  { value: 'liberal', label: 'Liberal' },
-  { value: 'moderate', label: 'Moderate' },
-  { value: 'conservative', label: 'Conservative' },
-  { value: 'very-conservative', label: 'Very Conservative' },
-  { value: 'libertarian', label: 'Libertarian' },
-  { value: 'apolitical', label: 'Not Political' },
-  { value: 'other', label: 'Other' },
-  { value: 'prefer-not-say', label: 'Prefer not to say' },
-];
-
 const RegistrationPage: React.FC<RegistrationPageProps> = ({ initialLocations, onBack }) => {
-  // Location state (from landing page)
-  const [expandedBoroughs, setExpandedBoroughs] = useState<Set<string>>(new Set());
-  const [selectedLocations, setSelectedLocations] = useState<SelectedLocation[]>(initialLocations);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
-
-  // Form state
-  const [formData, setFormData] = useState({
-    sex: [] as string[],
-    age: '',
-    ethnicity: '',
-    occupation: '',
-    languages: [] as string[],
-    maxDistanceToMetro: '',
-    religion: '',
-    sexualOrientation: '',
-    political: '',
-    children: '',
-    pets: '',
-    smoking: '',
-    drinking: '',
-    weed: '',
-    drugs: '',
-  });
-
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
 
-  // Location management functions (same as SearchSection)
-  const toggleBorough = (borough: string): void => {
-    const newExpanded = new Set(expandedBoroughs);
-    if (newExpanded.has(borough)) {
-      newExpanded.delete(borough);
-    } else {
-      newExpanded.add(borough);
-    }
-    setExpandedBoroughs(newExpanded);
-  };
+  // Location management
+  const {
+    expandedBoroughs,
+    selectedLocations,
+    toggleBorough,
+    handleNeighborhoodToggle,
+    isNeighborhoodSelected,
+    removeLocation,
+    getBoroughLabel,
+    getNeighborhoodLabel,
+    isAtMaxSelection,
+    setSelectedLocations,
+  } = useLocationSelection({ initialLocations, maxSelections: 5 });
 
-  const handleNeighborhoodToggle = (borough: string, neighborhood: string): void => {
-    const locationId = `${borough}-${neighborhood}`;
-    const existingIndex = selectedLocations.findIndex(loc => loc.id === locationId);
+  // Form management
+  const {
+    formData,
+    errors,
+    isSubmitting,
+    updateField,
+    handleSexToggle,
+    handleLanguageToggle,
+    handleSSNChange,
+    validateForm,
+    getCompletionPercentage,
+    setIsSubmitting,
+  } = useRegistrationForm();
+
+  const handleSubmit = async (): Promise<void> => {
+    if (!validateForm() || selectedLocations.length === 0) {
+      if (selectedLocations.length === 0) {
+        alert('Please select at least one location.');
+      }
+      return;
+    }
+
+    setIsSubmitting(true);
     
-    if (existingIndex !== -1) {
-      setSelectedLocations(selectedLocations.filter(loc => loc.id !== locationId));
-    } else if (selectedLocations.length < 5) {
-      setSelectedLocations([...selectedLocations, {
-        borough,
-        neighborhood,
-        id: locationId
-      }]);
+    try {
+      const submissionData = prepareSubmissionData(formData, selectedLocations);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      console.log('Form submitted:', submissionData);
+      alert('Registration complete! In a real app, this would save your profile and start matching you with compatible roommates.');
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert('An error occurred during registration. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const isNeighborhoodSelected = (borough: string, neighborhood: string): boolean => {
-    return selectedLocations.some(loc => loc.id === `${borough}-${neighborhood}`);
-  };
-
-  const removeLocation = (locationId: string): void => {
-    setSelectedLocations(selectedLocations.filter(loc => loc.id !== locationId));
-  };
-
-  const getBoroughLabel = (value: string): string => {
-    return boroughs.find(b => b.value === value)?.label || value;
-  };
-
-  const getNeighborhoodLabel = (borough: string, neighborhood: string): string => {
-    return neighborhoods[borough]?.find(n => n.value === neighborhood)?.label || neighborhood;
-  };
-
-  // Form handlers
-  const handleSexToggle = (value: string): void => {
-    setFormData(prev => ({
-      ...prev,
-      sex: prev.sex.includes(value)
-        ? prev.sex.filter(s => s !== value)
-        : [...prev.sex, value]
-    }));
-  };
-
-  const handleLanguageToggle = (value: string): void => {
-    setFormData(prev => ({
-      ...prev,
-      languages: prev.languages.includes(value)
-        ? prev.languages.filter(l => l !== value)
-        : [...prev.languages, value]
-    }));
-  };
-
-  const handleInputChange = (field: string, value: string): void => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = (): void => {
-    console.log('Form submitted:', { locations: selectedLocations, ...formData });
-    alert('Registration complete! In a real app, this would save your profile and start matching you with compatible roommates.');
-  };
+  const completionPercentage = getCompletionPercentage();
+  const recommendedRent = calculateRecommendedRent(formData.annualIncome);
 
   return (
     <div className="registration-page">
@@ -212,22 +94,35 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ initialLocations, o
         <p className="reg-subtitle">
           Our AI-powered matching system will automatically pair you with compatible roommates 
           who are searching for the same locations and share similar lifestyles. 
-          The more information you provide, the better we can match you!
+          The more accurate information you provide, the better we can match you with your ideal roommate!
         </p>
+        
+        {/* Progress Indicator */}
+        <div className="progress-container">
+          <div className="progress-bar">
+            <div 
+              className="progress-fill" 
+              style={{ width: `${completionPercentage}%` }}
+            ></div>
+          </div>
+          <span className="progress-text">{completionPercentage}% Complete</span>
+        </div>
       </div>
 
       {/* Selected Locations */}
       <div className="section-card">
         <h2 className="section-title">Your Selected Locations</h2>
         <p className="section-description">
-          These are the neighborhoods where you're looking for a place. You can update your selections below.
+          These are the neighborhoods where you're looking to rent. You can update your selections below.
         </p>
         
         {selectedLocations.length > 0 && (
           <div className="selected-locations-display">
             {selectedLocations.map((location) => (
               <div key={location.id} className="location-chip">
-                <span>{getBoroughLabel(location.borough)} - {getNeighborhoodLabel(location.borough, location.neighborhood)}</span>
+                <span>
+                  {getBoroughLabel(location.borough)} - {getNeighborhoodLabel(location.borough, location.neighborhood)}
+                </span>
                 <button onClick={() => removeLocation(location.id)} className="chip-remove">×</button>
               </div>
             ))}
@@ -256,23 +151,28 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ initialLocations, o
                   
                   {expandedBoroughs.has(borough.value) && (
                     <div className="neighborhood-list-reg">
-                      {neighborhoods[borough.value]?.map((neighborhood) => (
-                        <label key={neighborhood.value} className="neighborhood-item-reg">
-                          <input
-                            type="checkbox"
-                            checked={isNeighborhoodSelected(borough.value, neighborhood.value)}
-                            onChange={() => handleNeighborhoodToggle(borough.value, neighborhood.value)}
-                            disabled={selectedLocations.length >= 5 && !isNeighborhoodSelected(borough.value, neighborhood.value)}
-                          />
-                          <span>{neighborhood.label}</span>
-                        </label>
-                      ))}
+                      {neighborhoods[borough.value]?.map((neighborhood) => {
+                        const isSelected = isNeighborhoodSelected(borough.value, neighborhood.value);
+                        const isDisabled = isAtMaxSelection() && !isSelected;
+                        
+                        return (
+                          <label key={neighborhood.value} className="neighborhood-item-reg">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleNeighborhoodToggle(borough.value, neighborhood.value)}
+                              disabled={isDisabled}
+                            />
+                            <span>{neighborhood.label}</span>
+                          </label>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
               ))}
             </div>
-            {selectedLocations.length >= 5 && (
+            {isAtMaxSelection() && (
               <p className="max-warning">Maximum of 5 locations reached.</p>
             )}
           </div>
@@ -283,10 +183,101 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ initialLocations, o
       <div className="section-card">
         <h2 className="section-title">Personal Information</h2>
         <p className="section-description">
-          Tell us about yourself. This information helps us match you with compatible roommates who share similar backgrounds and lifestyles.
+          Tell us about yourself. This information helps us verify your identity and match you with roommates in your budget range.
         </p>
 
         <div className="form-grid">
+          {/* Account Information First */}
+          <div className="form-group">
+            <label className="form-label">Account Username *</label>
+            <input
+              type="text"
+              placeholder="Choose a username"
+              value={formData.account}
+              onChange={(e) => updateField('account', e.target.value)}
+              className={`form-input ${errors.account ? 'error' : ''}`}
+            />
+            {errors.account && <span className="error-message">{errors.account}</span>}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Password *</label>
+            <input
+              type="password"
+              placeholder="Choose a secure password"
+              value={formData.password}
+              onChange={(e) => updateField('password', e.target.value)}
+              className={`form-input ${errors.password ? 'error' : ''}`}
+            />
+            {errors.password && <span className="error-message">{errors.password}</span>}
+            <small className="form-hint">At least 8 characters with uppercase, lowercase, and numbers</small>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Email *</label>
+            <input
+              type="email"
+              placeholder="your@email.com"
+              value={formData.email}
+              onChange={(e) => updateField('email', e.target.value)}
+              className={`form-input ${errors.email ? 'error' : ''}`}
+            />
+            {errors.email && <span className="error-message">{errors.email}</span>}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Phone Number *</label>
+            <input
+              type="tel"
+              placeholder="(555) 123-4567"
+              value={formData.phoneNumber}
+              onChange={(e) => updateField('phoneNumber', e.target.value)}
+              className={`form-input ${errors.phoneNumber ? 'error' : ''}`}
+            />
+            {errors.phoneNumber && <span className="error-message">{errors.phoneNumber}</span>}
+          </div>
+
+          {/* Personal Information */}
+          <div className="form-group">
+            <label className="form-label">First Name *</label>
+            <input
+              type="text"
+              placeholder="Enter your first name"
+              value={formData.firstName}
+              onChange={(e) => updateField('firstName', e.target.value)}
+              className={`form-input ${errors.firstName ? 'error' : ''}`}
+            />
+            {errors.firstName && <span className="error-message">{errors.firstName}</span>}
+          </div>
+
+          {/* Last Name */}
+          <div className="form-group">
+            <label className="form-label">Last Name *</label>
+            <input
+              type="text"
+              placeholder="Enter your last name"
+              value={formData.lastName}
+              onChange={(e) => updateField('lastName', e.target.value)}
+              className={`form-input ${errors.lastName ? 'error' : ''}`}
+            />
+            {errors.lastName && <span className="error-message">{errors.lastName}</span>}
+          </div>
+
+          {/* Social Security Number */}
+          <div className="form-group">
+            <label className="form-label">Social Security Number *</label>
+            <input
+              type="text"
+              placeholder="XXX-XX-XXXX"
+              value={formData.ssn}
+              onChange={(e) => handleSSNChange(e.target.value)}
+              maxLength={11}
+              className={`form-input ${errors.ssn ? 'error' : ''}`}
+            />
+            {errors.ssn && <span className="error-message">{errors.ssn}</span>}
+            <small className="form-hint">Required for background checks. Your SSN is encrypted and secure.</small>
+          </div>
+
           {/* Sex */}
           <div className="form-group">
             <label className="form-label">Sex *</label>
@@ -308,6 +299,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ initialLocations, o
                 <span>Female</span>
               </label>
             </div>
+            {errors.sex && <span className="error-message">{errors.sex}</span>}
           </div>
 
           {/* Age */}
@@ -319,9 +311,52 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ initialLocations, o
               max="100"
               placeholder="Enter your age"
               value={formData.age}
-              onChange={(e) => handleInputChange('age', e.target.value)}
-              className="form-input"
+              onChange={(e) => updateField('age', e.target.value)}
+              className={`form-input ${errors.age ? 'error' : ''}`}
             />
+            {errors.age && <span className="error-message">{errors.age}</span>}
+          </div>
+
+          {/* Maximum Walking Distance to Metro */}
+          <div className="form-group">
+            <label className="form-label">Maximum Walking Distance to Metro *</label>
+            <select
+              value={formData.maxDistanceToMetro}
+              onChange={(e) => updateField('maxDistanceToMetro', e.target.value)}
+              className={`form-select ${errors.maxDistanceToMetro ? 'error' : ''}`}
+            >
+              {metroDistanceOptions.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            {errors.maxDistanceToMetro && <span className="error-message">{errors.maxDistanceToMetro}</span>}
+          </div>
+
+          {/* Move-in Date */}
+          <div className="form-group">
+            <label className="form-label">Estimated Move-in Date *</label>
+            <input
+              type="date"
+              value={formData.moveInDate}
+              onChange={(e) => updateField('moveInDate', e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              className={`form-input ${errors.moveInDate ? 'error' : ''}`}
+            />
+            {errors.moveInDate && <span className="error-message">{errors.moveInDate}</span>}
+          </div>
+
+          {/* Rent Duration */}
+          <div className="form-group">
+            <label className="form-label">Estimated Rental Duration *</label>
+            <input
+              type="text"
+              placeholder="e.g., 12 months, 2 years"
+              value={formData.rentDuration}
+              onChange={(e) => updateField('rentDuration', e.target.value)}
+              className={`form-input ${errors.rentDuration ? 'error' : ''}`}
+            />
+            {errors.rentDuration && <span className="error-message">{errors.rentDuration}</span>}
+            <small className="form-hint">How long do you plan to stay?</small>
           </div>
 
           {/* Ethnicity */}
@@ -329,7 +364,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ initialLocations, o
             <label className="form-label">Ethnicity</label>
             <select
               value={formData.ethnicity}
-              onChange={(e) => handleInputChange('ethnicity', e.target.value)}
+              onChange={(e) => updateField('ethnicity', e.target.value)}
               className="form-select"
             >
               {ethnicities.map(eth => (
@@ -338,123 +373,127 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ initialLocations, o
             </select>
           </div>
 
-          {/* Occupation */}
-          <div className="form-group">
-            <label className="form-label">Occupation *</label>
-            <select
-              value={formData.occupation}
-              onChange={(e) => handleInputChange('occupation', e.target.value)}
-              className="form-select"
-            >
-              {occupations.map(occ => (
-                <option key={occ.value} value={occ.value}>{occ.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Languages */}
-          <div className="form-group full-width">
-            <label className="form-label">Languages Spoken *</label>
-            <div className="multi-select-container">
-              <button
-                type="button"
-                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                className="multi-select-trigger"
+          {/* Demographics Row 1: Occupation / Languages / Annual Income */}
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Occupation *</label>
+              <select
+                value={formData.occupation}
+                onChange={(e) => updateField('occupation', e.target.value)}
+                className={`form-select ${errors.occupation ? 'error' : ''}`}
               >
-                {formData.languages.length > 0
-                  ? `${formData.languages.length} selected`
-                  : 'Select languages'}
-                <span>{showLanguageDropdown ? '▲' : '▼'}</span>
-              </button>
-              
-              {showLanguageDropdown && (
-                <div className="multi-select-dropdown">
-                  {languages.map(lang => (
-                    <label key={lang.value} className="multi-select-option">
-                      <input
-                        type="checkbox"
-                        checked={formData.languages.includes(lang.value)}
-                        onChange={() => handleLanguageToggle(lang.value)}
-                      />
-                      <span>{lang.label}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-              
-              {formData.languages.length > 0 && (
-                <div className="selected-languages">
-                  {formData.languages.map(lang => (
-                    <span key={lang} className="language-chip">
-                      {languages.find(l => l.value === lang)?.label}
-                      <button
-                        type="button"
-                        onClick={() => handleLanguageToggle(lang)}
-                        className="chip-remove"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
+                {occupations.map(occ => (
+                  <option key={occ.value} value={occ.value}>{occ.label}</option>
+                ))}
+              </select>
+              {errors.occupation && <span className="error-message">{errors.occupation}</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Languages Spoken *</label>
+              <div className="multi-select-container">
+                <button
+                  type="button"
+                  onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                  className={`multi-select-trigger ${errors.languages ? 'error' : ''}`}
+                >
+                  {formData.languages.length > 0
+                    ? `${formData.languages.length} selected`
+                    : 'Select languages'}
+                  <span>{showLanguageDropdown ? '▲' : '▼'}</span>
+                </button>
+                
+                {showLanguageDropdown && (
+                  <div className="multi-select-dropdown">
+                    {languages.map(lang => (
+                      <label key={lang.value} className="multi-select-option">
+                        <input
+                          type="checkbox"
+                          checked={formData.languages.includes(lang.value)}
+                          onChange={() => handleLanguageToggle(lang.value)}
+                        />
+                        <span>{lang.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                
+                {formData.languages.length > 0 && (
+                  <div className="selected-languages">
+                    {formData.languages.map(lang => (
+                      <span key={lang} className="language-chip">
+                        {languages.find(l => l.value === lang)?.label}
+                        <button
+                          type="button"
+                          onClick={() => handleLanguageToggle(lang)}
+                          className="chip-remove"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {errors.languages && <span className="error-message">{errors.languages}</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Annual Income *</label>
+              <input
+                type="number"
+                placeholder="e.g., 75000"
+                value={formData.annualIncome}
+                onChange={(e) => updateField('annualIncome', e.target.value)}
+                className={`form-input ${errors.annualIncome ? 'error' : ''}`}
+              />
+              {errors.annualIncome && <span className="error-message">{errors.annualIncome}</span>}
+              <small className="form-hint">
+                USD before taxes. {recommendedRent > 0 && `Recommended max rent: ${formatCurrency(recommendedRent)}/month`}
+              </small>
             </div>
           </div>
 
-          {/* Max Distance to Metro */}
-          <div className="form-group">
-            <label className="form-label">Max Walking Distance to Metro (minutes) *</label>
-            <input
-              type="number"
-              min="1"
-              max="60"
-              placeholder="e.g., 10"
-              value={formData.maxDistanceToMetro}
-              onChange={(e) => handleInputChange('maxDistanceToMetro', e.target.value)}
-              className="form-input"
-            />
-          </div>
+          {/* Demographics Row 2: Political Views / Religion / Sexual Orientation */}
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Political Views</label>
+              <select
+                value={formData.political}
+                onChange={(e) => updateField('political', e.target.value)}
+                className="form-select"
+              >
+                {politicalViews.map(pol => (
+                  <option key={pol.value} value={pol.value}>{pol.label}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Religion */}
-          <div className="form-group">
-            <label className="form-label">Religion</label>
-            <select
-              value={formData.religion}
-              onChange={(e) => handleInputChange('religion', e.target.value)}
-              className="form-select"
-            >
-              {religions.map(rel => (
-                <option key={rel.value} value={rel.value}>{rel.label}</option>
-              ))}
-            </select>
-          </div>
+            <div className="form-group">
+              <label className="form-label">Religion</label>
+              <select
+                value={formData.religion}
+                onChange={(e) => updateField('religion', e.target.value)}
+                className="form-select"
+              >
+                {religions.map(rel => (
+                  <option key={rel.value} value={rel.value}>{rel.label}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Sexual Orientation */}
-          <div className="form-group">
-            <label className="form-label">Sexual Orientation</label>
-            <select
-              value={formData.sexualOrientation}
-              onChange={(e) => handleInputChange('sexualOrientation', e.target.value)}
-              className="form-select"
-            >
-              {sexualOrientations.map(so => (
-                <option key={so.value} value={so.value}>{so.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Political Views */}
-          <div className="form-group">
-            <label className="form-label">Political Views</label>
-            <select
-              value={formData.political}
-              onChange={(e) => handleInputChange('political', e.target.value)}
-              className="form-select"
-            >
-              {politicalViews.map(pol => (
-                <option key={pol.value} value={pol.value}>{pol.label}</option>
-              ))}
-            </select>
+            <div className="form-group">
+              <label className="form-label">Sexual Orientation</label>
+              <select
+                value={formData.sexualOrientation}
+                onChange={(e) => updateField('sexualOrientation', e.target.value)}
+                className="form-select"
+              >
+                {sexualOrientations.map(so => (
+                  <option key={so.value} value={so.value}>{so.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -463,7 +502,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ initialLocations, o
       <div className="section-card">
         <h2 className="section-title">Lifestyle Preferences</h2>
         <p className="section-description">
-          Help us understand your lifestyle to find roommates with compatible habits and preferences.
+          Help us understand your daily habits and preferences to find roommates with compatible lifestyles.
         </p>
 
         <div className="form-grid">
@@ -471,233 +510,146 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ initialLocations, o
           <div className="form-group">
             <label className="form-label">Children *</label>
             <div className="radio-group">
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="children"
-                  value="no"
-                  checked={formData.children === 'no'}
-                  onChange={(e) => handleInputChange('children', e.target.value)}
-                />
-                <span>No</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="children"
-                  value="will-have"
-                  checked={formData.children === 'will-have'}
-                  onChange={(e) => handleInputChange('children', e.target.value)}
-                />
-                <span>Will soon have</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="children"
-                  value="yes"
-                  checked={formData.children === 'yes'}
-                  onChange={(e) => handleInputChange('children', e.target.value)}
-                />
-                <span>Yes</span>
-              </label>
+              {lifestyleOptions.children.map(option => (
+                <label key={option.value} className="radio-label">
+                  <input
+                    type="radio"
+                    name="children"
+                    value={option.value}
+                    checked={formData.children === option.value}
+                    onChange={(e) => updateField('children', e.target.value)}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
             </div>
+            {errors.children && <span className="error-message">{errors.children}</span>}
           </div>
 
           {/* Pets */}
           <div className="form-group">
             <label className="form-label">Pets *</label>
             <div className="radio-group">
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="pets"
-                  value="no"
-                  checked={formData.pets === 'no'}
-                  onChange={(e) => handleInputChange('pets', e.target.value)}
-                />
-                <span>No</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="pets"
-                  value="will-have"
-                  checked={formData.pets === 'will-have'}
-                  onChange={(e) => handleInputChange('pets', e.target.value)}
-                />
-                <span>Will soon have</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="pets"
-                  value="yes"
-                  checked={formData.pets === 'yes'}
-                  onChange={(e) => handleInputChange('pets', e.target.value)}
-                />
-                <span>Yes</span>
-              </label>
+              {lifestyleOptions.pets.map(option => (
+                <label key={option.value} className="radio-label">
+                  <input
+                    type="radio"
+                    name="pets"
+                    value={option.value}
+                    checked={formData.pets === option.value}
+                    onChange={(e) => updateField('pets', e.target.value)}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
             </div>
+            {errors.pets && <span className="error-message">{errors.pets}</span>}
           </div>
 
           {/* Smoking */}
           <div className="form-group">
             <label className="form-label">Smoking *</label>
             <div className="radio-group">
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="smoking"
-                  value="no"
-                  checked={formData.smoking === 'no'}
-                  onChange={(e) => handleInputChange('smoking', e.target.value)}
-                />
-                <span>No</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="smoking"
-                  value="sometimes"
-                  checked={formData.smoking === 'sometimes'}
-                  onChange={(e) => handleInputChange('smoking', e.target.value)}
-                />
-                <span>Sometimes</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="smoking"
-                  value="often"
-                  checked={formData.smoking === 'often'}
-                  onChange={(e) => handleInputChange('smoking', e.target.value)}
-                />
-                <span>Often</span>
-              </label>
+              {lifestyleOptions.frequency.map(option => (
+                <label key={option.value} className="radio-label">
+                  <input
+                    type="radio"
+                    name="smoking"
+                    value={option.value}
+                    checked={formData.smoking === option.value}
+                    onChange={(e) => updateField('smoking', e.target.value)}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
             </div>
+            {errors.smoking && <span className="error-message">{errors.smoking}</span>}
           </div>
 
           {/* Drinking */}
           <div className="form-group">
             <label className="form-label">Drinking *</label>
             <div className="radio-group">
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="drinking"
-                  value="no"
-                  checked={formData.drinking === 'no'}
-                  onChange={(e) => handleInputChange('drinking', e.target.value)}
-                />
-                <span>No</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="drinking"
-                  value="sometimes"
-                  checked={formData.drinking === 'sometimes'}
-                  onChange={(e) => handleInputChange('drinking', e.target.value)}
-                />
-                <span>Sometimes</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="drinking"
-                  value="often"
-                  checked={formData.drinking === 'often'}
-                  onChange={(e) => handleInputChange('drinking', e.target.value)}
-                />
-                <span>Often</span>
-              </label>
+              {lifestyleOptions.frequency.map(option => (
+                <label key={option.value} className="radio-label">
+                  <input
+                    type="radio"
+                    name="drinking"
+                    value={option.value}
+                    checked={formData.drinking === option.value}
+                    onChange={(e) => updateField('drinking', e.target.value)}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
             </div>
+            {errors.drinking && <span className="error-message">{errors.drinking}</span>}
           </div>
 
-          {/* Weed */}
+          {/* Cannabis */}
           <div className="form-group">
             <label className="form-label">Cannabis Use *</label>
             <div className="radio-group">
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="weed"
-                  value="no"
-                  checked={formData.weed === 'no'}
-                  onChange={(e) => handleInputChange('weed', e.target.value)}
-                />
-                <span>No</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="weed"
-                  value="sometimes"
-                  checked={formData.weed === 'sometimes'}
-                  onChange={(e) => handleInputChange('weed', e.target.value)}
-                />
-                <span>Sometimes</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="weed"
-                  value="often"
-                  checked={formData.weed === 'often'}
-                  onChange={(e) => handleInputChange('weed', e.target.value)}
-                />
-                <span>Often</span>
-              </label>
+              {lifestyleOptions.frequency.map(option => (
+                <label key={option.value} className="radio-label">
+                  <input
+                    type="radio"
+                    name="weed"
+                    value={option.value}
+                    checked={formData.weed === option.value}
+                    onChange={(e) => updateField('weed', e.target.value)}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
             </div>
+            {errors.weed && <span className="error-message">{errors.weed}</span>}
           </div>
 
-          {/* Drugs */}
+          {/* Other Substances */}
           <div className="form-group">
             <label className="form-label">Other Substances *</label>
             <div className="radio-group">
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="drugs"
-                  value="no"
-                  checked={formData.drugs === 'no'}
-                  onChange={(e) => handleInputChange('drugs', e.target.value)}
-                />
-                <span>No</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="drugs"
-                  value="sometimes"
-                  checked={formData.drugs === 'sometimes'}
-                  onChange={(e) => handleInputChange('drugs', e.target.value)}
-                />
-                <span>Sometimes</span>
-              </label>
-              <label className="radio-label">
-                <input
-                  type="radio"
-                  name="drugs"
-                  value="often"
-                  checked={formData.drugs === 'often'}
-                  onChange={(e) => handleInputChange('drugs', e.target.value)}
-                />
-                <span>Often</span>
-              </label>
+              {lifestyleOptions.frequency.map(option => (
+                <label key={option.value} className="radio-label">
+                  <input
+                    type="radio"
+                    name="drugs"
+                    value={option.value}
+                    checked={formData.drugs === option.value}
+                    onChange={(e) => updateField('drugs', e.target.value)}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
             </div>
+            {errors.drugs && <span className="error-message">{errors.drugs}</span>}
           </div>
         </div>
       </div>
 
       {/* Submit Button */}
       <div className="submit-section">
-        <button onClick={handleSubmit} className="submit-btn">
-          Complete Registration & Find Roommates
+        <button 
+          onClick={handleSubmit} 
+          className="submit-btn"
+          disabled={isSubmitting || selectedLocations.length === 0}
+        >
+          {isSubmitting ? (
+            <span className="loading-state">
+              <svg className="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Processing Registration...
+            </span>
+          ) : (
+            'Complete Registration & Find Roommates'
+          )}
         </button>
         <p className="submit-note">
-          * Required fields. Your information is kept private and only shared with matched roommates.
+          * Required fields. Your information is encrypted and kept strictly confidential. 
+          We use bank-level security to protect your personal data.
         </p>
       </div>
     </div>

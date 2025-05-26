@@ -1,3 +1,5 @@
+/* src/styles/RegistrationPage.css */
+
 /* Registration Page Styles */
 .registration-page {
     min-height: 100vh;
@@ -208,6 +210,13 @@
     gap: 1.5rem;
   }
   
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    grid-column: 1 / -1;
+  }
+  
   .form-group {
     display: flex;
     flex-direction: column;
@@ -383,13 +392,19 @@
     max-width: 400px;
   }
   
-  .submit-btn:hover {
+  .submit-btn:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(238, 90, 82, 0.4);
   }
   
   .submit-btn:active {
     transform: translateY(0);
+  }
+  
+  .submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
   }
   
   .submit-note {
@@ -457,4 +472,13 @@
       padding: 1.25rem 2rem;
       font-size: 1rem;
     }
+  
+    .form-hint {
+      font-size: 0.7rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
   }
+  
