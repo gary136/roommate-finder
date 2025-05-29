@@ -53,3 +53,10 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 EOL
+
+# Backend environment
+backend/.env
+backend/.env.local
+
+# Backend dependencies
+backend/node_modules/

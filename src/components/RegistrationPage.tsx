@@ -1,10 +1,9 @@
-// src/components/RegistrationPage.tsx
-
 import React, { useState } from 'react';
 import { SelectedLocation } from '../types';
 import { useLocationSelection } from '../hooks/useLocationSelection';
 import { useRegistrationForm } from '../hooks/useRegistrationForm';
 import { prepareSubmissionData, formatCurrency, calculateRecommendedRent } from '../utils/formUtils';
+import { registerUser } from '../services/apiService';
 import {
   ethnicities,
   occupations,
@@ -65,16 +64,58 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ initialLocations, o
     setIsSubmitting(true);
     
     try {
-      const submissionData = prepareSubmissionData(formData, selectedLocations);
+      // Call the API to register the user
+      const response = await registerUser(formData, selectedLocations);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('✅ Registration successful:', response);
       
-      console.log('Form submitted:', submissionData);
-      alert('Registration complete! In a real app, this would save your profile and start matching you with compatible roommates.');
+      // Show success message with user details
+      const successMessage = `
+🎉 Registration Complete!
+
+Welcome ${response.user.personalInfo.firstName}!
+
+✅ Account created successfully
+✅ Profile completed
+✅ Recommended max rent: ${formatCurrency(response.recommendedRent)}/month
+
+Next Steps:
+${response.nextSteps.map(step => `• ${step}`).join('\n')}
+
+User ID: ${response.user._id}
+      `.trim();
+      
+      alert(successMessage);
+      
+      // Clear form data from localStorage after successful submission
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('roommate-registration-form');
+      }
+      
+      // In a real app, you might redirect to a dashboard or login page
+      // window.location.href = '/dashboard';
+      
     } catch (error) {
-      console.error('Submission error:', error);
-      alert('An error occurred during registration. Please try again.');
+      console.error('❌ Registration error:', error);
+      
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error instanceof Error) {
+        // Handle specific error types
+        if (error.message.includes('email') && error.message.includes('exists')) {
+          errorMessage = 'An account with this email already exists. Please use a different email or try logging in.';
+        } else if (error.message.includes('username') && error.message.includes('exists')) {
+          errorMessage = 'This username is already taken. Please choose a different username.';
+        } else if (error.message.includes('Validation failed')) {
+          errorMessage = 'Please check your form data and try again. Some fields may contain invalid information.';
+        } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      alert(`❌ Registration Error:\n\n${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
