@@ -62,13 +62,13 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ initialLocations, o
     }
 
     setIsSubmitting(true);
-    
+
     try {
       // Call the API to register the user
       const response = await registerUser(formData, selectedLocations);
-      
+
       console.log('✅ Registration successful:', response);
-      
+
       // Show success message with user details
       const successMessage = `
 🎉 Registration Complete!
@@ -84,22 +84,22 @@ ${response.nextSteps.map(step => `• ${step}`).join('\n')}
 
 User ID: ${response.user._id}
       `.trim();
-      
+
       alert(successMessage);
-      
+
       // Clear form data from localStorage after successful submission
       if (typeof window !== 'undefined') {
         localStorage.removeItem('roommate-registration-form');
       }
-      
+
       // In a real app, you might redirect to a dashboard or login page
       // window.location.href = '/dashboard';
-      
+
     } catch (error) {
       console.error('❌ Registration error:', error);
-      
+
       let errorMessage = 'Registration failed. Please try again.';
-      
+
       if (error instanceof Error) {
         // Handle specific error types
         if (error.message.includes('email') && error.message.includes('exists')) {
@@ -114,7 +114,7 @@ User ID: ${response.user._id}
           errorMessage = error.message;
         }
       }
-      
+
       alert(`❌ Registration Error:\n\n${errorMessage}`);
     } finally {
       setIsSubmitting(false);
@@ -133,16 +133,16 @@ User ID: ${response.user._id}
         </button>
         <h1 className="reg-title">Complete Your Profile</h1>
         <p className="reg-subtitle">
-          Our AI-powered matching system will automatically pair you with compatible roommates 
-          who are searching for the same locations and share similar lifestyles. 
+          Our AI-powered matching system will automatically pair you with compatible roommates
+          who are searching for the same locations and share similar lifestyles.
           The more accurate information you provide, the better we can match you with your ideal roommate!
         </p>
-        
+
         {/* Progress Indicator */}
         <div className="progress-container">
           <div className="progress-bar">
-            <div 
-              className="progress-fill" 
+            <div
+              className="progress-fill"
               style={{ width: `${completionPercentage}%` }}
             ></div>
           </div>
@@ -156,7 +156,7 @@ User ID: ${response.user._id}
         <p className="section-description">
           These are the neighborhoods where you're looking to rent. You can update your selections below.
         </p>
-        
+
         {selectedLocations.length > 0 && (
           <div className="selected-locations-display">
             {selectedLocations.map((location) => (
@@ -170,8 +170,8 @@ User ID: ${response.user._id}
           </div>
         )}
 
-        <button 
-          onClick={() => setShowLocationSelector(!showLocationSelector)} 
+        <button
+          onClick={() => setShowLocationSelector(!showLocationSelector)}
           className="toggle-locations-btn"
         >
           {showLocationSelector ? 'Hide' : 'Update'} Location Preferences
@@ -189,13 +189,13 @@ User ID: ${response.user._id}
                     <span>{borough.label}</span>
                     <span>{expandedBoroughs.has(borough.value) ? '−' : '+'}</span>
                   </button>
-                  
+
                   {expandedBoroughs.has(borough.value) && (
                     <div className="neighborhood-list-reg">
                       {neighborhoods[borough.value]?.map((neighborhood) => {
                         const isSelected = isNeighborhoodSelected(borough.value, neighborhood.value);
                         const isDisabled = isAtMaxSelection() && !isSelected;
-                        
+
                         return (
                           <label key={neighborhood.value} className="neighborhood-item-reg">
                             <input
@@ -358,6 +358,39 @@ User ID: ${response.user._id}
             {errors.age && <span className="error-message">{errors.age}</span>}
           </div>
 
+          {/* Rent Range Preferences */}
+          <div className="form-group">
+            <label className="form-label">Minimum Rent (per person) *</label>
+            <input
+              type="number"
+              placeholder="e.g., 800"
+              value={formData.minRent}
+              onChange={(e) => updateField('minRent', e.target.value)}
+              className={`form-input ${errors.minRent ? 'error' : ''}`}
+              min="0"
+              step="50"
+            />
+            {errors.minRent && <span className="error-message">{errors.minRent}</span>}
+            <small className="form-hint">Your minimum acceptable monthly rent per person</small>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Maximum Rent (per person) *</label>
+            <input
+              type="number"
+              placeholder="e.g., 2000"
+              value={formData.maxRent}
+              onChange={(e) => updateField('maxRent', e.target.value)}
+              className={`form-input ${errors.maxRent ? 'error' : ''}`}
+              min="0"
+              step="50"
+            />
+            {errors.maxRent && <span className="error-message">{errors.maxRent}</span>}
+            <small className="form-hint">
+              Your maximum budget per person. {formData.maxRent && `$${parseInt(formData.maxRent) * 12}/year`}
+            </small>
+          </div>
+
           {/* Maximum Walking Distance to Metro */}
           <div className="form-group">
             <label className="form-label">Maximum Walking Distance to Metro *</label>
@@ -389,15 +422,21 @@ User ID: ${response.user._id}
           {/* Rent Duration */}
           <div className="form-group">
             <label className="form-label">Estimated Rental Duration *</label>
-            <input
-              type="text"
-              placeholder="e.g., 12 months, 2 years"
-              value={formData.rentDuration}
-              onChange={(e) => updateField('rentDuration', e.target.value)}
-              className={`form-input ${errors.rentDuration ? 'error' : ''}`}
-            />
+            <div className="input-with-suffix">
+              <input
+                type="number"
+                placeholder="12"
+                value={formData.rentDuration}
+                onChange={(e) => updateField('rentDuration', e.target.value)}
+                className={`form-input ${errors.rentDuration ? 'error' : ''}`}
+                min="3"
+                max="60"
+                step="1"
+                style={{ paddingRight: '80px' }}
+              />
+              <span className="input-suffix">months</span>
+            </div>
             {errors.rentDuration && <span className="error-message">{errors.rentDuration}</span>}
-            <small className="form-hint">How long do you plan to stay?</small>
           </div>
 
           {/* Ethnicity */}
@@ -443,7 +482,7 @@ User ID: ${response.user._id}
                     : 'Select languages'}
                   <span>{showLanguageDropdown ? '▲' : '▼'}</span>
                 </button>
-                
+
                 {showLanguageDropdown && (
                   <div className="multi-select-dropdown">
                     {languages.map(lang => (
@@ -458,7 +497,7 @@ User ID: ${response.user._id}
                     ))}
                   </div>
                 )}
-                
+
                 {formData.languages.length > 0 && (
                   <div className="selected-languages">
                     {formData.languages.map(lang => (
@@ -671,8 +710,8 @@ User ID: ${response.user._id}
 
       {/* Submit Button */}
       <div className="submit-section">
-        <button 
-          onClick={handleSubmit} 
+        <button
+          onClick={handleSubmit}
           className="submit-btn"
           disabled={isSubmitting || selectedLocations.length === 0}
         >
@@ -689,7 +728,7 @@ User ID: ${response.user._id}
           )}
         </button>
         <p className="submit-note">
-          * Required fields. Your information is encrypted and kept strictly confidential. 
+          * Required fields. Your information is encrypted and kept strictly confidential.
           We use bank-level security to protect your personal data.
         </p>
       </div>

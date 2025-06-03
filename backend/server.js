@@ -12,6 +12,10 @@ const { errorHandler, notFound } = require('./middleware/errorMiddleware');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ✅ ADD THESE TWO LINES HERE:
+app.set('trust proxy', 1); // Trust Railway's proxy for rate limiting
+app.get('/favicon.ico', (req, res) => res.status(204).end()); // Handle favicon requests
+
 // Security and Performance Middleware
 app.use(helmet());
 app.use(compression());
