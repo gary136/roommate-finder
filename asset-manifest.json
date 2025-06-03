@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/roommate-finder/static/css/main.ba43a4dc.css",
-    "main.js": "/roommate-finder/static/js/main.8814c314.js",
+    "main.css": "/roommate-finder/static/css/main.f3d51b80.css",
+    "main.js": "/roommate-finder/static/js/main.b51ef627.js",
     "index.html": "/roommate-finder/index.html",
-    "main.ba43a4dc.css.map": "/roommate-finder/static/css/main.ba43a4dc.css.map",
-    "main.8814c314.js.map": "/roommate-finder/static/js/main.8814c314.js.map"
+    "main.f3d51b80.css.map": "/roommate-finder/static/css/main.f3d51b80.css.map",
+    "main.b51ef627.js.map": "/roommate-finder/static/js/main.b51ef627.js.map"
   },
   "entrypoints": [
-    "static/css/main.ba43a4dc.css",
-    "static/js/main.8814c314.js"
+    "static/css/main.f3d51b80.css",
+    "static/js/main.b51ef627.js"
   ]
 }
