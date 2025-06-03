@@ -97,9 +97,13 @@ class ApiService {
       },
       housingInfo: {
         selectedLocations: locations,
+        rentPreferences: {
+          minRent: parseInt(formData.minRent),
+          maxRent: parseInt(formData.maxRent)
+        },
         maxDistanceToMetro: formData.maxDistanceToMetro,
         moveInDate: formData.moveInDate,
-        rentDuration: formData.rentDuration,
+        rentDuration: parseInt(formData.rentDuration),
       },
       professionalInfo: {
         occupation: formData.occupation,

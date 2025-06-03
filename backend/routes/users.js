@@ -62,6 +62,22 @@ const registerValidation = [
     .isArray({ min: 1, max: 5 })
     .withMessage('Please select between 1 and 5 locations'),
   
+  // NEW: Rent preferences validation
+  body('housingInfo.rentPreferences.minRent')
+    .isInt({ min: 500, max: 10000 })
+    .withMessage('Minimum rent must be between $500 and $10,000'),
+  
+  body('housingInfo.rentPreferences.maxRent')
+    .isInt({ min: 500, max: 10000 })
+    .withMessage('Maximum rent must be between $500 and $10,000')
+    .custom((maxRent, { req }) => {
+      const minRent = req.body.housingInfo.rentPreferences.minRent;
+      if (parseInt(maxRent) <= parseInt(minRent)) {
+        throw new Error('Maximum rent must be higher than minimum rent');
+      }
+      return true;
+    }),
+  
   body('housingInfo.moveInDate')
     .isISO8601()
     .isAfter()
@@ -70,6 +86,11 @@ const registerValidation = [
   body('housingInfo.maxDistanceToMetro')
     .isIn(['5', '10', '15', 'no-preference'])
     .withMessage('Invalid metro distance preference'),
+
+  // Updated rental duration validation
+  body('housingInfo.rentDuration')
+  .isInt({ min: 3, max: 60 })
+  .withMessage('Rental duration must be between 3 and 60 months'),
 
   // Professional Information
   body('professionalInfo.occupation')

@@ -83,7 +83,20 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
       }
-    }],
+    }],    
+    // NEW: Rent preferences
+    rentPreferences: {
+      minRent: {
+        type: Number,
+        required: true,
+        min: 0
+      },
+      maxRent: {
+        type: Number,
+        required: true,
+        min: 0
+      }
+    },
     maxDistanceToMetro: {
       type: String,
       required: true,
@@ -94,9 +107,17 @@ const userSchema = new mongoose.Schema({
       required: true
     },
     rentDuration: {
-      type: String,
-      required: true
-    }
+        type: Number,  // Change from String to Number
+        required: true,
+        min: [3, 'Minimum rental duration is 3 months'],
+        max: [60, 'Maximum rental duration is 60 months'],
+        validate: {
+          validator: function(value) {
+            return Number.isInteger(value);
+          },
+          message: 'Rental duration must be a whole number of months'
+        }
+      },
   },
 
   // Professional Information

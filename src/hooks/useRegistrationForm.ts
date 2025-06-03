@@ -1,5 +1,3 @@
-// src/hooks/useRegistrationForm.ts
-
 import { useState, useCallback, useEffect } from 'react';
 
 export interface FormData {
@@ -10,24 +8,29 @@ export interface FormData {
   annualIncome: string;
   moveInDate: string;
   rentDuration: string;
-  
+
   // Account Information
   email: string;
   phoneNumber: string;
   account: string;
   password: string;
-  
+
   // Demographics
   sex: string[];
   age: string;
   ethnicity: string;
   occupation: string;
   languages: string[];
+
+  // Housing Preferences - NEW FIELDS
+  minRent: string;
+  maxRent: string;
+
   maxDistanceToMetro: string;
   religion: string;
   sexualOrientation: string;
   political: string;
-  
+
   // Lifestyle
   children: string;
   pets: string;
@@ -57,6 +60,8 @@ const initialFormData: FormData = {
   ethnicity: '',
   occupation: '',
   languages: [],
+  minRent: '',           // ← New field
+  maxRent: '',           // ← New field
   maxDistanceToMetro: '',
   religion: '',
   sexualOrientation: '',
@@ -85,7 +90,7 @@ export const useRegistrationForm = (saveToStorage: boolean = true) => {
     }
     return initialFormData;
   });
-  
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -98,7 +103,7 @@ export const useRegistrationForm = (saveToStorage: boolean = true) => {
 
   const updateField = useCallback((field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
@@ -112,7 +117,7 @@ export const useRegistrationForm = (saveToStorage: boolean = true) => {
         ? prev.sex.filter(s => s !== value)
         : [...prev.sex, value]
     }));
-    
+
     if (errors.sex) {
       setErrors(prev => ({ ...prev, sex: '' }));
     }
@@ -125,7 +130,7 @@ export const useRegistrationForm = (saveToStorage: boolean = true) => {
         ? prev.languages.filter(l => l !== value)
         : [...prev.languages, value]
     }));
-    
+
     if (errors.languages) {
       setErrors(prev => ({ ...prev, languages: '' }));
     }
@@ -167,8 +172,17 @@ export const useRegistrationForm = (saveToStorage: boolean = true) => {
       newErrors.moveInDate = 'Move-in date is required';
     }
 
-    if (!formData.rentDuration.trim()) {
+    if (!formData.rentDuration || !formData.rentDuration.trim()) {
       newErrors.rentDuration = 'Rental duration is required';
+    } else {
+      const duration = parseInt(formData.rentDuration);
+      if (isNaN(duration) || duration <= 0) {
+        newErrors.rentDuration = 'Please enter a valid number of months';
+      } else if (duration < 3) {
+        newErrors.rentDuration = 'Minimum rental duration is 3 months';
+      } else if (duration > 60) {
+        newErrors.rentDuration = 'Maximum rental duration is 60 months (5 years)';
+      }
     }
 
     // Account Information validation
@@ -226,6 +240,32 @@ export const useRegistrationForm = (saveToStorage: boolean = true) => {
       }
     });
 
+    // Rent validation
+    if (!formData.minRent || parseInt(formData.minRent) <= 0) {
+      newErrors.minRent = 'Minimum rent is required';
+    }
+
+    if (!formData.maxRent || parseInt(formData.maxRent) <= 0) {
+      newErrors.maxRent = 'Maximum rent is required';
+    }
+
+    if (formData.minRent && formData.maxRent) {
+      const minRent = parseInt(formData.minRent);
+      const maxRent = parseInt(formData.maxRent);
+
+      if (minRent >= maxRent) {
+        newErrors.maxRent = 'Maximum rent must be higher than minimum rent';
+      }
+
+      if (minRent < 500) {
+        newErrors.minRent = 'Minimum rent seems too low (minimum $500)';
+      }
+
+      if (maxRent > 10000) {
+        newErrors.maxRent = 'Maximum rent seems too high (maximum $10,000)';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData]);
@@ -233,28 +273,28 @@ export const useRegistrationForm = (saveToStorage: boolean = true) => {
   const getCompletionPercentage = useCallback((): number => {
     const requiredFields = [
       'firstName', 'lastName', 'ssn', 'annualIncome', 'moveInDate', 'rentDuration',
-      'email', 'phoneNumber', 'account', 'password', 'age', 'occupation', 
+      'email', 'phoneNumber', 'account', 'password', 'age', 'occupation',
       'maxDistanceToMetro', 'children', 'pets', 'smoking', 'drinking', 'weed', 'drugs'
     ];
-    
+
     const arrayFields = ['sex', 'languages'];
-    
+
     let completed = 0;
-    
+
     // Check regular fields
     requiredFields.forEach(field => {
       if (formData[field as keyof FormData]) {
         completed++;
       }
     });
-    
+
     // Check array fields
     arrayFields.forEach(field => {
       if ((formData[field as keyof FormData] as string[]).length > 0) {
         completed++;
       }
     });
-    
+
     const totalRequired = requiredFields.length + arrayFields.length;
     return Math.round((completed / totalRequired) * 100);
   }, [formData]);
