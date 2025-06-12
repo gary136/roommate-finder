@@ -9,6 +9,20 @@ const {
 } = require('../controllers/userController');
 
 const router = express.Router();
+// Add this to the top of routes/users.js if it doesn't have a root route
+router.get('/', (req, res) => {
+  res.json({
+    message: 'RoomieMatch Users API',
+    endpoints: {
+      // Add your existing user endpoints here
+      'GET /api/users': 'List users',
+      'GET /api/users/:id': 'Get user by ID',
+      'PUT /api/users/:id': 'Update user',
+      'DELETE /api/users/:id': 'Delete user'
+      // Adjust based on your actual user routes
+    }
+  });
+});
 
 // Validation rules for user registration
 const registerValidation = [
