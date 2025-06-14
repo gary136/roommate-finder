@@ -97,6 +97,7 @@ roommate-finder/
 ├── tsconfig.json                   # TypeScript configuration
 ├── .gitignore                      # Git ignore file
 └── README.md                       # Project documentation
+```
 
 ## 🚀 Getting Started
 
@@ -112,28 +113,39 @@ roommate-finder/
 ```bash
 git clone https://github.com/gary136/roommate-finder.git
 cd roommate-finder
+```
 
-Install frontend dependencies:
-
-bashnpm install
+2. Install frontend dependencies:
+```bash
+npm install
 # or
 yarn install
+```
 
-Install backend dependencies:
-
-bashcd backend
+3. Install backend dependencies:
+```bash
+cd backend
 npm install
 cd ..
+```
 
-Create a .env file in the backend directory with your MongoDB connection string:
-
-envMONGODB_URI=your_mongodb_connection_string
+4. Create a `.env` file in the backend directory with your MongoDB connection string:
+```env
+MONGODB_URI=your_mongodb_connection_string
 PORT=5000
 NODE_ENV=development
+```
 
-Start the backend server:
+5. Start the backend server:
+```bash
+cd backend
+npm start
+# or for development with nodemon
+npm run dev
+```
 
-bashcd backend
+6. In a new terminal, start the frontend development server:
+```bash
 npm start
 # or for development with nodemon
 npm run dev
@@ -143,26 +155,28 @@ In a new terminal, start the frontend development server:
 bashnpm start
 # or
 yarn start
+```
 
-Open http://localhost:3000 in your browser
+7. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-🔧 Available Scripts
-Frontend Scripts
+## 🔧 Available Scripts
 
-npm start - Runs the frontend app in development mode
-npm test - Launches the frontend test runner
-npm run build - Builds the frontend app for production
-npm run eject - Ejects from Create React App (one-way operation)
+### Frontend Scripts
+- `npm start` - Runs the frontend app in development mode
+- `npm test` - Launches the frontend test runner
+- `npm run build` - Builds the frontend app for production
+- `npm run eject` - Ejects from Create React App (one-way operation)
 
-Backend Scripts
+### Backend Scripts
+- `npm start` - Runs the backend server
+- `npm run dev` - Runs the backend server with nodemon for development
+- `npm test` - Runs backend tests (when implemented)
 
-npm start - Runs the backend server
-npm run dev - Runs the backend server with nodemon for development
-npm test - Runs backend tests (when implemented)
+## 📦 Dependencies
 
-📦 Dependencies
-Frontend Dependencies
-json{
+### Frontend Dependencies
+```json
+{
   "react": "^18.2.0",
   "react-dom": "^18.2.0",
   "react-scripts": "5.0.1",
@@ -171,8 +185,11 @@ json{
   "@types/react-dom": "^18.2.0",
   "axios": "^1.4.0"
 }
-Backend Dependencies
-json{
+```
+
+### Backend Dependencies
+```json
+{
   "express": "^4.18.2",
   "mongoose": "^7.0.0",
   "cors": "^2.8.5",
@@ -181,9 +198,14 @@ json{
   "jsonwebtoken": "^9.0.0",
   "express-validator": "^7.0.1"
 }
-🌐 API Service
-The application includes an API service (src/services/apiService.ts) that handles communication between the frontend and backend:
-typescript// Example API calls
+```
+
+## 🌐 API Service
+
+The application includes an API service (`src/services/apiService.ts`) that handles communication between the frontend and backend:
+
+```typescript
+// Example API calls
 import { apiService } from './services/apiService';
 
 // Register a new user
@@ -194,14 +216,17 @@ const response = await apiService.loginUser(credentials);
 
 // Get user profile
 const profile = await apiService.getUserProfile(userId);
-🎨 Architecture & Customization
-Custom Hooks
-useRegistrationForm
+```
 
-Manages all form state and validation
-Provides real-time error checking
-Handles form persistence to localStorage
-Calculates completion percentage
+## 🎨 Architecture & Customization
+
+### Custom Hooks
+
+#### useRegistrationForm
+- Manages all form state and validation
+- Provides real-time error checking
+- Handles form persistence to localStorage
+- Calculates completion percentage
 
 typescriptconst {
   formData,
@@ -353,33 +378,35 @@ Open a Pull Request
 
 📝 Code Style Guidelines
 
-Use TypeScript for all new code
-Follow React Hooks patterns
-Extract reusable logic into custom hooks
-Use meaningful variable and function names
-Include proper error handling
-Add comments for complex logic
+- Use TypeScript for all new code
+- Follow React Hooks patterns
+- Extract reusable logic into custom hooks
+- Use meaningful variable and function names
+- Include proper error handling
+- Add comments for complex logic
 
-📝 License
-This project is licensed under the MIT License - see the LICENSE file for details.
-🔮 Future Enhancements
+## 📝 License
 
- Backend API integration with Node.js/Express ✅ (Completed)
- Real-time chat functionality with Socket.io
- User authentication with JWT
- Profile photo uploads with image optimization
- Advanced AI matching algorithm
- Email notifications and reminders
- Saved searches and favorites
- Interactive map integration
- Mobile app version with React Native
- Payment integration for premium features
- Background check integration
- Roommate agreement templates
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-👥 Authors
+## 🔮 Future Enhancements
 
-Gary136 - Initial work and development
+- [ ] Backend API integration with Node.js/Express ✅ (Completed)
+- [ ] Real-time chat functionality with Socket.io
+- [ ] User authentication with JWT
+- [ ] Profile photo uploads with image optimization
+- [ ] Advanced AI matching algorithm
+- [ ] Email notifications and reminders
+- [ ] Saved searches and favorites
+- [ ] Interactive map integration
+- [ ] Mobile app version with React Native
+- [ ] Payment integration for premium features
+- [ ] Background check integration
+- [ ] Roommate agreement templates
+
+## 👥 Authors
+
+- [Gary136](https://github.com/gary136) - Initial work and development
 
 🙏 Acknowledgments
 
@@ -389,22 +416,27 @@ Create React App for the build tooling
 Community contributors and testers
 NYC Open Data for neighborhood information
 
-📊 Performance
+## 📊 Performance
 
-Lighthouse Score: 95+ for Performance, Accessibility, Best Practices
-Bundle Size: Optimized for fast loading
-Mobile Responsive: Perfect scores on mobile devices
-SEO Optimized: Meta tags and semantic HTML
+- **Lighthouse Score**: 95+ for Performance, Accessibility, Best Practices
+- **Bundle Size**: Optimized for fast loading
+- **Mobile Responsive**: Perfect scores on mobile devices
+- **SEO Optimized**: Meta tags and semantic HTML
 
-🔄 Git Workflow & Push Instructions
-Initial Setup (if not already done)
-bash# Initialize git repository
+## 🔄 Git Workflow & Push Instructions
+
+### Initial Setup (if not already done)
+```bash
+# Initialize git repository
 git init
 
 # Add remote origin
 git remote add origin https://github.com/gary136/roommate-finder.git
-Pushing Updates to Main Branch
-bash# Check current status
+```
+
+### Pushing Updates to Main Branch
+```bash
+# Check current status
 git status
 
 # Add all changes
@@ -415,8 +447,11 @@ git commit -m "Add backend API integration with Express.js and MongoDB"
 
 # Push to main branch
 git push origin main
-Working with Feature Branch
-bash# Switch to feature branch
+```
+
+### Working with Feature Branch
+```bash
+# Switch to feature branch
 git checkout feature/value-first-journey
 
 # Merge latest changes from main
@@ -428,26 +463,28 @@ git commit -m "Update feature branch with backend integration"
 
 # Push feature branch
 git push origin feature/value-first-journey
-Best Practices for Commits
+```
 
-Use clear, descriptive commit messages
-Follow conventional commits format:
-
-feat: for new features
-fix: for bug fixes
-docs: for documentation changes
-refactor: for code refactoring
-test: for adding tests
-chore: for maintenance tasks
-
-
+### Best Practices for Commits
+- Use clear, descriptive commit messages
+- Follow conventional commits format:
+  - `feat:` for new features
+  - `fix:` for bug fixes
+  - `docs:` for documentation changes
+  - `refactor:` for code refactoring
+  - `test:` for adding tests
+  - `chore:` for maintenance tasks
 
 Example:
-bashgit commit -m "feat: add user authentication with JWT"
+```bash
+git commit -m "feat: add user authentication with JWT"
 git commit -m "fix: resolve form validation error for phone numbers"
 git commit -m "docs: update README with backend structure"
-Syncing with Remote Repository
-bash# Fetch latest changes
+```
+
+### Syncing with Remote Repository
+```bash
+# Fetch latest changes
 git fetch origin
 
 # Pull latest changes from main
@@ -457,5 +494,8 @@ git pull origin main
 # Then add and commit the resolved files
 git add .
 git commit -m "resolve: merge conflicts"
+```
+
+---
 
 Made with ❤️ for finding the perfect roommate in NYC and beyond!
