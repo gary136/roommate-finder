@@ -2,7 +2,7 @@
 
 A modern, responsive web application that helps users find compatible roommates in New York City and Jersey City through AI-powered matching based on location preferences and lifestyle compatibility.
 
-![RoomieMatch Preview](https://img.shields.io/badge/React-18.2.0-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0.0-blue) ![Custom_Hooks](https://img.shields.io/badge/Custom_Hooks-✅-green) ![License](https://img.shields.io/badge/license-MIT-green)
+![RoomieMatch Preview](https://img.shields.io/badge/React-18.2.0-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0.0-blue) ![Node.js](https://img.shields.io/badge/Node.js-Express-green) ![Custom_Hooks](https://img.shields.io/badge/Custom_Hooks-✅-green) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## 🚀 Features
 
@@ -26,10 +26,13 @@ A modern, responsive web application that helps users find compatible roommates 
 - **Smart Validation**: Password complexity, email format, phone number validation
 - **Income Calculator**: Automatic rent recommendations based on 30% income rule
 - **Responsive Rows**: Organized form layout with logical field grouping
+- **Backend API**: RESTful API with Express.js for user management
+- **API Integration**: Frontend-backend communication via apiService
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React 18 with TypeScript
+### Frontend
+- **Framework**: React 18 with TypeScript
 - **State Management**: Custom React Hooks (useRegistrationForm, useLocationSelection)
 - **Styling**: CSS3 with modern glassmorphism design
 - **Validation**: Real-time form validation with error handling
@@ -37,15 +40,32 @@ A modern, responsive web application that helps users find compatible roommates 
 - **Type Safety**: Comprehensive TypeScript interfaces and types
 - **Build Tool**: Create React App
 
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB (via Mongoose)
+- **Architecture**: MVC pattern with controllers, models, and routes
+- **Error Handling**: Custom error middleware
+
 ## 📁 Project Structure
 
 ```
 roommate-finder/
-├── public/
-│   ├── index.html
-│   ├── favicon.ico
-│   └── manifest.json
-├── src/
+├── backend/                        # Backend API
+│   ├── controllers/
+│   │   └── userController.js       # User-related business logic
+│   ├── middleware/
+│   │   └── errorMiddleware.js      # Error handling middleware
+│   ├── models/
+│   │   └── User.js                 # User data model
+│   ├── routes/
+│   │   └── users.js                # User API routes
+│   ├── server.js                   # Express server entry point
+│   ├── package.json                # Backend dependencies
+│   └── package-lock.json
+├── docs/                           # Documentation
+│   └── PRODUCT_REQUIREMENTS.md     # Product requirements document
+├── src/                            # Frontend source code
 │   ├── components/
 │   │   ├── BackgroundShapes.tsx    # Animated background elements
 │   │   ├── Header.tsx              # App header with title
@@ -60,6 +80,8 @@ roommate-finder/
 │   ├── hooks/
 │   │   ├── useLocationSelection.ts # Location selection logic
 │   │   └── useRegistrationForm.ts  # Form state management & validation
+│   ├── services/
+│   │   └── apiService.ts           # API communication service
 │   ├── styles/
 │   │   ├── globals.css             # Global styles and animations
 │   │   ├── App.css                 # Landing page styles
@@ -69,11 +91,14 @@ roommate-finder/
 │   ├── utils/
 │   │   └── formUtils.ts            # Validation and utility functions
 │   ├── App.tsx                     # Main app component
-│   └── index.tsx                   # App entry point
-├── package.json
-├── tsconfig.json
-├── .gitignore
-└── README.md
+│   ├── App.test.tsx                # App component tests
+│   ├── index.tsx                   # App entry point
+│   └── setupTests.ts               # Test configuration
+├── public/                         # Static assets
+├── package.json                    # Frontend dependencies
+├── tsconfig.json                   # TypeScript configuration
+├── .gitignore                      # Git ignore file
+└── README.md                       # Project documentation
 ```
 
 ## 🚀 Getting Started
@@ -82,6 +107,7 @@ roommate-finder/
 
 - Node.js (v16 or higher)
 - npm or yarn
+- MongoDB (local or cloud instance)
 
 ### Installation
 
@@ -91,31 +117,60 @@ git clone https://github.com/gary136/roommate-finder.git
 cd roommate-finder
 ```
 
-2. Install dependencies:
+2. Install frontend dependencies:
 ```bash
 npm install
 # or
 yarn install
 ```
 
-3. Start the development server:
+3. Install backend dependencies:
+```bash
+cd backend
+npm install
+cd ..
+```
+
+4. Create a `.env` file in the backend directory with your MongoDB connection string:
+```env
+MONGODB_URI=your_mongodb_connection_string
+PORT=5000
+NODE_ENV=development
+```
+
+5. Start the backend server:
+```bash
+cd backend
+npm start
+# or for development with nodemon
+npm run dev
+```
+
+6. In a new terminal, start the frontend development server:
 ```bash
 npm start
 # or
 yarn start
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+7. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## 🔧 Available Scripts
 
-- `npm start` - Runs the app in development mode
-- `npm test` - Launches the test runner
-- `npm run build` - Builds the app for production
+### Frontend Scripts
+- `npm start` - Runs the frontend app in development mode
+- `npm test` - Launches the frontend test runner
+- `npm run build` - Builds the frontend app for production
 - `npm run eject` - Ejects from Create React App (one-way operation)
+
+### Backend Scripts
+- `npm start` - Runs the backend server
+- `npm run dev` - Runs the backend server with nodemon for development
+- `npm test` - Runs backend tests (when implemented)
 
 ## 📦 Dependencies
 
+### Frontend Dependencies
 ```json
 {
   "react": "^18.2.0",
@@ -123,8 +178,40 @@ yarn start
   "react-scripts": "5.0.1",
   "typescript": "^5.0.0",
   "@types/react": "^18.2.0",
-  "@types/react-dom": "^18.2.0"
+  "@types/react-dom": "^18.2.0",
+  "axios": "^1.4.0"
 }
+```
+
+### Backend Dependencies
+```json
+{
+  "express": "^4.18.2",
+  "mongoose": "^7.0.0",
+  "cors": "^2.8.5",
+  "dotenv": "^16.0.3",
+  "bcryptjs": "^2.4.3",
+  "jsonwebtoken": "^9.0.0",
+  "express-validator": "^7.0.1"
+}
+```
+
+## 🌐 API Service
+
+The application includes an API service (`src/services/apiService.ts`) that handles communication between the frontend and backend:
+
+```typescript
+// Example API calls
+import { apiService } from './services/apiService';
+
+// Register a new user
+const userData = await apiService.registerUser(formData);
+
+// Login user
+const response = await apiService.loginUser(credentials);
+
+// Get user profile
+const profile = await apiService.getUserProfile(userId);
 ```
 
 ## 🎨 Architecture & Customization
@@ -315,7 +402,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔮 Future Enhancements
 
-- [ ] Backend API integration with Node.js/Express
+- [ ] Backend API integration with Node.js/Express ✅ (Completed)
 - [ ] Real-time chat functionality with Socket.io
 - [ ] User authentication with JWT
 - [ ] Profile photo uploads with image optimization
@@ -346,6 +433,79 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Bundle Size**: Optimized for fast loading
 - **Mobile Responsive**: Perfect scores on mobile devices
 - **SEO Optimized**: Meta tags and semantic HTML
+
+## 🔄 Git Workflow & Push Instructions
+
+### Initial Setup (if not already done)
+```bash
+# Initialize git repository
+git init
+
+# Add remote origin
+git remote add origin https://github.com/gary136/roommate-finder.git
+```
+
+### Pushing Updates to Main Branch
+```bash
+# Check current status
+git status
+
+# Add all changes
+git add .
+
+# Commit with descriptive message
+git commit -m "Add backend API integration with Express.js and MongoDB"
+
+# Push to main branch
+git push origin main
+```
+
+### Working with Feature Branch
+```bash
+# Switch to feature branch
+git checkout feature/value-first-journey
+
+# Merge latest changes from main
+git merge main
+
+# Add and commit your changes
+git add .
+git commit -m "Update feature branch with backend integration"
+
+# Push feature branch
+git push origin feature/value-first-journey
+```
+
+### Best Practices for Commits
+- Use clear, descriptive commit messages
+- Follow conventional commits format:
+  - `feat:` for new features
+  - `fix:` for bug fixes
+  - `docs:` for documentation changes
+  - `refactor:` for code refactoring
+  - `test:` for adding tests
+  - `chore:` for maintenance tasks
+
+Example:
+```bash
+git commit -m "feat: add user authentication with JWT"
+git commit -m "fix: resolve form validation error for phone numbers"
+git commit -m "docs: update README with backend structure"
+```
+
+### Syncing with Remote Repository
+```bash
+# Fetch latest changes
+git fetch origin
+
+# Pull latest changes from main
+git pull origin main
+
+# Resolve any conflicts if they exist
+# Then add and commit the resolved files
+git add .
+git commit -m "resolve: merge conflicts"
+```
 
 ---
 
