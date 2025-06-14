@@ -1,155 +1,67 @@
 const express = require('express');
-const { body } = require('express-validator');
+const router = express.Router();
 const {
-  registerUser,
   getUserProfile,
   updateUserProfile,
   findCompatibleRoommates,
-  getUserStats
+  getUserStats,
+  getUsers,
+  deleteUser
 } = require('../controllers/userController');
+const auth = require('../middleware/auth');
 
-const router = express.Router();
-// Add this to the top of routes/users.js if it doesn't have a root route
-router.get('/', (req, res) => {
+// ========================================
+// ROOT ROUTE DOCUMENTATION
+// ========================================
+
+// Root route for users endpoints documentation
+router.get('/docs', (req, res) => {
   res.json({
     message: 'RoomieMatch Users API',
+    version: '2.0.0',
     endpoints: {
-      // Add your existing user endpoints here
-      'GET /api/users': 'List users',
-      'GET /api/users/:id': 'Get user by ID',
-      'PUT /api/users/:id': 'Update user',
-      'DELETE /api/users/:id': 'Delete user'
-      // Adjust based on your actual user routes
+      'GET /api/users/stats': 'Get platform statistics (public)',
+      'GET /api/users/:userId': 'Get user profile by ID (public)',
+      'GET /api/users': 'List users with filters (requires auth)',
+      'PUT /api/users/:userId': 'Update user profile (requires auth)',
+      'GET /api/users/:userId/compatible': 'Find compatible roommates (requires auth)',
+      'DELETE /api/users/:userId': 'Delete user account (requires auth)'
+    },
+    authentication: 'Include "Authorization: Bearer <token>" header for protected routes',
+    examples: {
+      getUserStats: 'GET /api/users/stats',
+      getProfile: 'GET /api/users/123',
+      findMatches: 'GET /api/users/123/compatible?limit=10&minScore=70',
+      updateProfile: 'PUT /api/users/123 (with auth)',
+      listUsers: 'GET /api/users?page=1&limit=20&onboardingCompleted=true (with auth)'
     }
   });
 });
 
-// Validation rules for user registration
-const registerValidation = [
-  // Account Information
-  body('account.username')
-    .isLength({ min: 3, max: 30 })
-    .withMessage('Username must be between 3 and 30 characters')
-    .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('Username can only contain letters, numbers, and underscores'),
-  
-  body('account.email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Please provide a valid email address'),
-  
-  body('account.password')
-    .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
-  
-  body('account.phoneNumber')
-    .matches(/^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/)
-    .withMessage('Please provide a valid phone number'),
+// ========================================
+// PUBLIC ROUTES (No Authentication Required)
+// ========================================
 
-  // Personal Information
-  body('personalInfo.firstName')
-    .isLength({ min: 1, max: 50 })
-    .trim()
-    .withMessage('First name is required and must be less than 50 characters'),
-  
-  body('personalInfo.lastName')
-    .isLength({ min: 1, max: 50 })
-    .trim()
-    .withMessage('Last name is required and must be less than 50 characters'),
-  
-  body('personalInfo.ssn')
-    .matches(/^\d{3}-\d{2}-\d{4}$/)
-    .withMessage('SSN must be in format XXX-XX-XXXX'),
-  
-  body('personalInfo.age')
-    .isInt({ min: 18, max: 100 })
-    .withMessage('Age must be between 18 and 100'),
-  
-  body('personalInfo.sex')
-    .isArray({ min: 1 })
-    .withMessage('Please select at least one sex option'),
-
-  // Housing Information
-  body('housingInfo.selectedLocations')
-    .isArray({ min: 1, max: 5 })
-    .withMessage('Please select between 1 and 5 locations'),
-  
-  // NEW: Rent preferences validation
-  body('housingInfo.rentPreferences.minRent')
-    .isInt({ min: 500, max: 10000 })
-    .withMessage('Minimum rent must be between $500 and $10,000'),
-  
-  body('housingInfo.rentPreferences.maxRent')
-    .isInt({ min: 500, max: 10000 })
-    .withMessage('Maximum rent must be between $500 and $10,000')
-    .custom((maxRent, { req }) => {
-      const minRent = req.body.housingInfo.rentPreferences.minRent;
-      if (parseInt(maxRent) <= parseInt(minRent)) {
-        throw new Error('Maximum rent must be higher than minimum rent');
-      }
-      return true;
-    }),
-  
-  body('housingInfo.moveInDate')
-    .isISO8601()
-    .isAfter()
-    .withMessage('Move-in date must be in the future'),
-  
-  body('housingInfo.maxDistanceToMetro')
-    .isIn(['5', '10', '15', 'no-preference'])
-    .withMessage('Invalid metro distance preference'),
-
-  // Updated rental duration validation
-  body('housingInfo.rentDuration')
-  .isInt({ min: 3, max: 60 })
-  .withMessage('Rental duration must be between 3 and 60 months'),
-
-  // Professional Information
-  body('professionalInfo.occupation')
-    .notEmpty()
-    .withMessage('Occupation is required'),
-  
-  body('professionalInfo.annualIncome')
-    .isInt({ min: 0 })
-    .withMessage('Annual income must be a positive number'),
-  
-  body('professionalInfo.languages')
-    .isArray({ min: 1 })
-    .withMessage('Please select at least one language'),
-
-  // Lifestyle Preferences
-  body('lifestyle.children')
-    .isIn(['no', 'will-have', 'yes'])
-    .withMessage('Invalid children preference'),
-  
-  body('lifestyle.pets')
-    .isIn(['no', 'will-have', 'yes'])
-    .withMessage('Invalid pets preference'),
-  
-  body('lifestyle.smoking')
-    .isIn(['no', 'sometimes', 'often'])
-    .withMessage('Invalid smoking preference'),
-  
-  body('lifestyle.drinking')
-    .isIn(['no', 'sometimes', 'often'])
-    .withMessage('Invalid drinking preference'),
-  
-  body('lifestyle.weed')
-    .isIn(['no', 'sometimes', 'often'])
-    .withMessage('Invalid cannabis preference'),
-  
-  body('lifestyle.drugs')
-    .isIn(['no', 'sometimes', 'often'])
-    .withMessage('Invalid substances preference')
-];
-
-// Routes
-router.post('/register', registerValidation, registerUser);
-router.get('/profile/:userId', getUserProfile);
-router.put('/profile/:userId', updateUserProfile);
-router.get('/compatible/:userId', findCompatibleRoommates);
+// Get platform statistics
 router.get('/stats', getUserStats);
+
+// Get user profile by ID (public for viewing potential matches)
+router.get('/:userId', getUserProfile);
+
+// ========================================
+// PROTECTED ROUTES (Authentication Required)
+// ========================================
+
+// Get all users with filtering (admin functionality)
+router.get('/', auth, getUsers);
+
+// Update user profile
+router.put('/:userId', auth, updateUserProfile);
+
+// Find compatible roommates for a user
+router.get('/:userId/compatible', auth, findCompatibleRoommates);
+
+// Delete user (admin or user themselves)
+router.delete('/:userId', auth, deleteUser);
 
 module.exports = router;

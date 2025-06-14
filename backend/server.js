@@ -14,6 +14,20 @@ const { errorHandler, notFound } = require('./middleware/errorMiddleware');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'RoomieMatch API v2.0',
+    status: 'running',
+    endpoints: {
+      auth: '/api/auth',
+      users: '/api/users', 
+      onboarding: '/api/onboarding',
+      preview: '/api/preview'
+    },
+    health: '/health'
+  });
+});
+
 // ✅ ADD THESE TWO LINES HERE:
 app.set('trust proxy', 1); // Trust Railway's proxy for rate limiting
 app.get('/favicon.ico', (req, res) => res.status(204).end()); // Handle favicon requests
@@ -147,6 +161,9 @@ app.get('/', (req, res) => {
     health: '/health'
   });
 });
+
+const previewRoutes = require('./routes/preview');
+app.use('/api/preview', previewRoutes);
 
 // Error handling middleware
 app.use(notFound);
