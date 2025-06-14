@@ -48,8 +48,6 @@ A modern, responsive web application that helps users find compatible roommates 
 - **Error Handling**: Custom error middleware
 
 ## 📁 Project Structure
-
-```
 roommate-finder/
 ├── backend/                        # Backend API
 │   ├── controllers/
@@ -149,6 +147,12 @@ npm run dev
 6. In a new terminal, start the frontend development server:
 ```bash
 npm start
+# or for development with nodemon
+npm run dev
+
+In a new terminal, start the frontend development server:
+
+bashnpm start
 # or
 yarn start
 ```
@@ -224,170 +228,155 @@ const profile = await apiService.getUserProfile(userId);
 - Handles form persistence to localStorage
 - Calculates completion percentage
 
-```typescript
-const {
+typescriptconst {
   formData,
   errors,
   updateField,
   validateForm,
   getCompletionPercentage
 } = useRegistrationForm();
-```
+useLocationSelection
 
-#### useLocationSelection
-- Handles neighborhood selection logic
-- Enforces maximum selection limits
-- Provides helper functions for display
+Handles neighborhood selection logic
+Enforces maximum selection limits
+Provides helper functions for display
 
-```typescript
-const {
+typescriptconst {
   selectedLocations,
   handleNeighborhoodToggle,
   removeLocation,
   isAtMaxSelection
 } = useLocationSelection({ maxSelections: 5 });
-```
+Adding New Form Fields
 
-### Adding New Form Fields
+Update the FormData interface in src/hooks/useRegistrationForm.ts
+Add validation logic in the validateForm function
+Update the form component in src/components/RegistrationPage.tsx
 
-1. Update the `FormData` interface in `src/hooks/useRegistrationForm.ts`
-2. Add validation logic in the `validateForm` function
-3. Update the form component in `src/components/RegistrationPage.tsx`
-
-### Adding New Locations
-
-Edit `src/data/locationData.ts`:
-
-```typescript
-export const neighborhoods: AreaData = {
+Adding New Locations
+Edit src/data/locationData.ts:
+typescriptexport const neighborhoods: AreaData = {
   manhattan: [
     { value: 'new-neighborhood', label: 'New Neighborhood' },
     // ... existing neighborhoods
   ],
   // ... other boroughs
 };
-```
-
-### Modifying Form Options
-
-Update `src/constants/formData.ts` to modify dropdown options:
-
-```typescript
-export const occupations = [
+Modifying Form Options
+Update src/constants/formData.ts to modify dropdown options:
+typescriptexport const occupations = [
   { value: 'new-job', label: 'New Job Title' },
   // ... existing options
 ];
-```
+🎯 Key Features Implementation
+Form Organization
 
-## 🎯 Key Features Implementation
+Account Fields: Username, password, email, phone (with validation)
+Personal Info: Name, SSN, demographics, timing preferences
+Responsive Rows:
 
-### Form Organization
-- **Account Fields**: Username, password, email, phone (with validation)
-- **Personal Info**: Name, SSN, demographics, timing preferences
-- **Responsive Rows**: 
-  - Row 1: Occupation / Languages / Annual Income
-  - Row 2: Political Views / Religion / Sexual Orientation
-- **Lifestyle Compatibility**: Comprehensive lifestyle questionnaire
+Row 1: Occupation / Languages / Annual Income
+Row 2: Political Views / Religion / Sexual Orientation
 
-### Advanced Validation
-- **Password Requirements**: 8+ characters, uppercase, lowercase, numbers
-- **Email Format**: Valid email pattern validation
-- **Phone Number**: US phone format validation
-- **Income Calculator**: Automatic rent recommendations (30% rule)
-- **Age Validation**: 18-100 years range
 
-### User Experience
-- **Progress Tracking**: Visual progress bar showing completion %
-- **Auto-save**: Form data persists across browser sessions
-- **Error Handling**: Real-time validation with clear error messages
-- **Loading States**: Visual feedback during form submission
-- **Responsive Design**: Optimized for all device sizes
+Lifestyle Compatibility: Comprehensive lifestyle questionnaire
 
-### Location System
-- **Multi-Borough Support**: Manhattan, Brooklyn, Queens, Jersey City
-- **Expandable Sections**: Click to expand/collapse neighborhoods
-- **Selection Limits**: Maximum 5 locations with visual feedback
-- **Quick Removal**: Easy location tag removal system
+Advanced Validation
 
-## 🌟 Form Validation Rules
+Password Requirements: 8+ characters, uppercase, lowercase, numbers
+Email Format: Valid email pattern validation
+Phone Number: US phone format validation
+Income Calculator: Automatic rent recommendations (30% rule)
+Age Validation: 18-100 years range
 
-- **Required Fields**: Marked with asterisks (*)
-- **Email**: Valid email format required
-- **Phone**: US format (XXX) XXX-XXXX
-- **Password**: Minimum 8 characters with mixed case and numbers
-- **SSN**: 9-digit format with automatic formatting (XXX-XX-XXXX)
-- **Age**: Must be between 18-100 years
-- **Languages**: At least one language required
-- **Lifestyle**: All lifestyle questions required
+User Experience
 
-## 🚢 Deployment
+Progress Tracking: Visual progress bar showing completion %
+Auto-save: Form data persists across browser sessions
+Error Handling: Real-time validation with clear error messages
+Loading States: Visual feedback during form submission
+Responsive Design: Optimized for all device sizes
 
-### Build for Production
+Location System
 
-```bash
-npm run build
-```
+Multi-Borough Support: Manhattan, Brooklyn, Queens, Jersey City
+Expandable Sections: Click to expand/collapse neighborhoods
+Selection Limits: Maximum 5 locations with visual feedback
+Quick Removal: Easy location tag removal system
 
-This creates an optimized production build in the `build` folder.
+🌟 Form Validation Rules
 
-### Deploy to Vercel (Recommended)
+Required Fields: Marked with asterisks (*)
+Email: Valid email format required
+Phone: US format (XXX) XXX-XXXX
+Password: Minimum 8 characters with mixed case and numbers
+SSN: 9-digit format with automatic formatting (XXX-XX-XXXX)
+Age: Must be between 18-100 years
+Languages: At least one language required
+Lifestyle: All lifestyle questions required
 
-1. Push code to GitHub
-2. Connect repository to [Vercel](https://vercel.com)
-3. Deploy automatically on every push
+🚢 Deployment
+Build for Production
+bashnpm run build
+This creates an optimized production build in the build folder.
+Deploy to Vercel (Recommended)
 
-### Deploy to Netlify
+Push code to GitHub
+Connect repository to Vercel
+Deploy automatically on every push
 
-1. Build the project: `npm run build`
-2. Drag and drop the `build` folder to [Netlify](https://netlify.com)
+Deploy to Netlify
 
-### Deploy to GitHub Pages
+Build the project: npm run build
+Drag and drop the build folder to Netlify
 
-1. Install gh-pages:
-```bash
-npm install --save-dev gh-pages
-```
+Deploy to GitHub Pages
 
-2. Add to package.json:
-```json
-"homepage": "https://gary136.github.io/roommate-finder",
+Install gh-pages:
+
+bashnpm install --save-dev gh-pages
+
+Add to package.json:
+
+json"homepage": "https://gary136.github.io/roommate-finder",
 "scripts": {
   "predeploy": "npm run build",
   "deploy": "gh-pages -d build"
 }
-```
 
-3. Deploy:
-```bash
-npm run deploy
-```
+Deploy:
 
-## 🧪 Testing
+bashnpm run deploy
+🧪 Testing
+Component Testing
 
-### Component Testing
-- Test custom hooks independently
-- Validate form submission logic
-- Test location selection functionality
+Test custom hooks independently
+Validate form submission logic
+Test location selection functionality
 
-### Form Validation Testing
-- Test all validation rules
-- Verify error message display
-- Test form persistence functionality
+Form Validation Testing
 
-## 🤝 Contributing
+Test all validation rules
+Verify error message display
+Test form persistence functionality
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Follow the existing code structure:
-   - Put reusable logic in custom hooks
-   - Add constants to the constants file
-   - Include proper TypeScript types
-4. Test your changes thoroughly
-5. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-6. Push to the branch (`git push origin feature/AmazingFeature`)
-7. Open a Pull Request
+🤝 Contributing
 
-## 📝 Code Style Guidelines
+Fork the repository
+Create your feature branch (git checkout -b feature/AmazingFeature)
+Follow the existing code structure:
+
+Put reusable logic in custom hooks
+Add constants to the constants file
+Include proper TypeScript types
+
+
+Test your changes thoroughly
+Commit your changes (git commit -m 'Add some AmazingFeature')
+Push to the branch (git push origin feature/AmazingFeature)
+Open a Pull Request
+
+📝 Code Style Guidelines
 
 - Use TypeScript for all new code
 - Follow React Hooks patterns
@@ -419,13 +408,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Gary136](https://github.com/gary136) - Initial work and development
 
-## 🙏 Acknowledgments
+🙏 Acknowledgments
 
-- React team for the amazing framework
-- TypeScript for enhanced developer experience
-- Create React App for the build tooling
-- Community contributors and testers
-- NYC Open Data for neighborhood information
+React team for the amazing framework
+TypeScript for enhanced developer experience
+Create React App for the build tooling
+Community contributors and testers
+NYC Open Data for neighborhood information
 
 ## 📊 Performance
 
