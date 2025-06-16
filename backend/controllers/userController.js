@@ -1,151 +1,13 @@
-const { validationResult } = require('express-validator');
 const User = require('../models/User');
 
-// @desc    Register a new user
-// @route   POST /api/users/register
-// @access  Public
-const registerUser = async (req, res) => {
-  try {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
-
-    const {
-      account,
-      personalInfo,
-      housingInfo,
-      professionalInfo,
-      lifestyle,
-      demographics
-    } = req.body;
-
-    // Check if user already exists
-    const existingUser = await User.findOne({
-      $or: [
-        { 'account.email': account.email },
-        { 'account.username': account.username }
-      ]
-    });
-
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'User already exists with this email or username'
-      });
-    }
-
-    // Get client IP and user agent for metadata
-    const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
-    const userAgent = req.get('User-Agent');
-
-    // Create new user
-    const user = new User({
-      account: {
-        username: account.username,
-        email: account.email,
-        password: account.password,
-        phoneNumber: account.phoneNumber
-      },
-      personalInfo: {
-        firstName: personalInfo.firstName,
-        lastName: personalInfo.lastName,
-        ssn: personalInfo.ssn, // In production, encrypt this
-        age: personalInfo.age,
-        sex: personalInfo.sex,
-        ethnicity: personalInfo.ethnicity
-      },
-      housingInfo: {
-        selectedLocations: housingInfo.selectedLocations,
-        maxDistanceToMetro: housingInfo.maxDistanceToMetro,
-        moveInDate: new Date(housingInfo.moveInDate),
-        rentDuration: housingInfo.rentDuration
-      },
-      professionalInfo: {
-        occupation: professionalInfo.occupation,
-        annualIncome: professionalInfo.annualIncome,
-        languages: professionalInfo.languages
-      },
-      lifestyle: {
-        children: lifestyle.children,
-        pets: lifestyle.pets,
-        smoking: lifestyle.smoking,
-        drinking: lifestyle.drinking,
-        weed: lifestyle.weed,
-        drugs: lifestyle.drugs
-      },
-      demographics: {
-        religion: demographics?.religion,
-        sexualOrientation: demographics?.sexualOrientation,
-        political: demographics?.political
-      },
-      metadata: {
-        profileCompleted: true,
-        isActive: true,
-        lastLogin: new Date(),
-        registrationDate: new Date(),
-        ipAddress: clientIP,
-        userAgent: userAgent
-      }
-    });
-
-    // Save user to database
-    const savedUser = await user.save();
-
-    // Calculate recommended rent
-    const recommendedRent = savedUser.getRecommendedRent();
-
-    // Log successful registration
-    console.log(`✅ New user registered: ${savedUser.account.username} (${savedUser.account.email})`);
-
-    // Return success response (password will be filtered out by toJSON transform)
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      data: {
-        user: savedUser,
-        recommendedRent: recommendedRent,
-        nextSteps: [
-          'Profile completed successfully',
-          'You can now browse compatible roommates',
-          'Check your email for verification instructions'
-        ]
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Registration error:', error);
-    
-    // Handle MongoDB duplicate key errors
-    if (error.code === 11000) {
-      const field = Object.keys(error.keyValue)[0];
-      return res.status(409).json({
-        success: false,
-        message: `A user with this ${field.includes('email') ? 'email' : 'username'} already exists`
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: 'Server error during registration',
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-    });
-  }
-};
-
-// @desc    Get user profile
-// @route   GET /api/users/profile/:userId
-// @access  Public (in production, this should be protected)
+// @desc    Get user profile by ID
+// @route   GET /api/users/:userId
+// @access  Public (should be protected in production)
 const getUserProfile = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select('-account.password -personalInfo.ssn');
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -157,7 +19,10 @@ const getUserProfile = async (req, res) => {
       success: true,
       data: {
         user: user,
-        recommendedRent: user.getRecommendedRent()
+        profileCompleteness: user.calculateCompleteness(),
+        budgetRange: user.getBudgetRange(),
+        selectedNeighborhoods: user.getSelectedNeighborhoods(),
+        canViewFullProfiles: user.canViewFullProfiles()
       }
     });
 
@@ -171,18 +36,26 @@ const getUserProfile = async (req, res) => {
 };
 
 // @desc    Update user profile
-// @route   PUT /api/users/profile/:userId
-// @access  Public (in production, this should be protected)
+// @route   PUT /api/users/:userId
+// @access  Protected
 const updateUserProfile = async (req, res) => {
   try {
     const { userId } = req.params;
     const updates = req.body;
 
+    // Sanitize updates - don't allow direct metadata changes
+    delete updates.metadata;
+    delete updates.account?.password;
+
     const user = await User.findByIdAndUpdate(
       userId,
-      { ...updates, 'metadata.lastLogin': new Date() },
+      { 
+        ...updates, 
+        'metadata.lastLogin': new Date(),
+        'metadata.profileCompleteness': undefined // Will be recalculated
+      },
       { new: true, runValidators: true }
-    );
+    ).select('-account.password -personalInfo.ssn');
 
     if (!user) {
       return res.status(404).json({
@@ -191,10 +64,17 @@ const updateUserProfile = async (req, res) => {
       });
     }
 
+    // Recalculate completeness
+    user.metadata.profileCompleteness = user.calculateCompleteness();
+    await user.save();
+
     res.json({
       success: true,
       message: 'Profile updated successfully',
-      data: { user }
+      data: { 
+        user,
+        profileCompleteness: user.metadata.profileCompleteness
+      }
     });
 
   } catch (error) {
@@ -207,12 +87,12 @@ const updateUserProfile = async (req, res) => {
 };
 
 // @desc    Find compatible roommates
-// @route   GET /api/users/compatible/:userId
-// @access  Public (in production, this should be protected)
+// @route   GET /api/users/:userId/compatible
+// @access  Protected
 const findCompatibleRoommates = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { limit = 10, minScore = 50 } = req.query;
+    const { limit = 10, minScore = 70 } = req.query;
 
     const currentUser = await User.findById(userId);
     if (!currentUser) {
@@ -222,24 +102,51 @@ const findCompatibleRoommates = async (req, res) => {
       });
     }
 
+    // Check if user can view full profiles
+    if (!currentUser.canViewFullProfiles()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Complete your profile to view potential matches',
+        profileCompleteness: currentUser.calculateCompleteness(),
+        required: 75
+      });
+    }
+
     // Find users with overlapping locations
-    const userLocationIds = currentUser.housingInfo.selectedLocations.map(loc => loc.id);
+    const userLocationIds = currentUser.housingInfo.selectedLocations?.map(loc => loc.id) || [];
     
+    if (userLocationIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please add location preferences to find matches'
+      });
+    }
+
     const potentialMatches = await User.find({
       _id: { $ne: userId },
       'metadata.isActive': true,
+      'metadata.onboardingCompleted': true,
       'housingInfo.selectedLocations.id': { $in: userLocationIds }
-    }).limit(parseInt(limit) * 2); // Get more to filter by compatibility
+    })
+    .select('-account.password -personalInfo.ssn')
+    .limit(parseInt(limit) * 2); // Get more to filter by compatibility
 
-    // Calculate compatibility scores
+    // Calculate compatibility scores using your User model method
     const compatibleUsers = potentialMatches
-      .map(user => ({
-        user: user,
-        compatibilityScore: currentUser.getCompatibilityScore(user),
-        commonLocations: user.housingInfo.selectedLocations.filter(
+      .map(user => {
+        const score = currentUser.getCompatibilityScore(user);
+        const commonLocations = user.housingInfo.selectedLocations?.filter(
           loc => userLocationIds.includes(loc.id)
-        ).length
-      }))
+        ) || [];
+
+        return {
+          user: user,
+          compatibilityScore: score,
+          commonLocations: commonLocations,
+          budgetCompatible: checkBudgetCompatibility(currentUser, user),
+          lifestyleMatch: calculateLifestyleMatch(currentUser, user)
+        };
+      })
       .filter(match => match.compatibilityScore >= parseInt(minScore))
       .sort((a, b) => b.compatibilityScore - a.compatibilityScore)
       .slice(0, parseInt(limit));
@@ -253,6 +160,10 @@ const findCompatibleRoommates = async (req, res) => {
           minCompatibilityScore: parseInt(minScore),
           userLocations: currentUser.housingInfo.selectedLocations,
           limit: parseInt(limit)
+        },
+        currentUser: {
+          budgetRange: currentUser.getBudgetRange(),
+          neighborhoods: currentUser.getSelectedNeighborhoods()
         }
       }
     });
@@ -266,32 +177,38 @@ const findCompatibleRoommates = async (req, res) => {
   }
 };
 
-// @desc    Get user statistics
+// @desc    Get platform statistics
 // @route   GET /api/users/stats
 // @access  Public
 const getUserStats = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ 'metadata.isActive': true });
+    const completedUsers = await User.countDocuments({ 'metadata.onboardingCompleted': true });
     const recentUsers = await User.countDocuments({
       'metadata.registrationDate': { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
     });
 
-    // Popular locations
+    // Popular locations analysis
     const locationStats = await User.aggregate([
+      { $match: { 'housingInfo.selectedLocations': { $exists: true, $ne: [] } } },
       { $unwind: '$housingInfo.selectedLocations' },
       { 
         $group: { 
-          _id: '$housingInfo.selectedLocations.borough', 
+          _id: {
+            borough: '$housingInfo.selectedLocations.borough',
+            neighborhood: '$housingInfo.selectedLocations.neighborhood'
+          },
           count: { $sum: 1 } 
         } 
       },
       { $sort: { count: -1 } },
-      { $limit: 5 }
+      { $limit: 10 }
     ]);
 
     // Popular occupations
     const occupationStats = await User.aggregate([
+      { $match: { 'professionalInfo.occupation': { $exists: true } } },
       { 
         $group: { 
           _id: '$professionalInfo.occupation', 
@@ -302,17 +219,35 @@ const getUserStats = async (req, res) => {
       { $limit: 5 }
     ]);
 
+    // Profile completeness distribution
+    const completenessStats = await User.aggregate([
+      {
+        $bucket: {
+          groupBy: '$metadata.profileCompleteness',
+          boundaries: [0, 25, 50, 75, 90, 100],
+          default: 'unknown',
+          output: { count: { $sum: 1 } }
+        }
+      }
+    ]);
+
     res.json({
       success: true,
       data: {
         overview: {
           totalUsers,
           activeUsers,
+          completedProfiles: completedUsers,
           recentUsers,
-          registrationRate: ((recentUsers / 7) * 100).toFixed(1) + '% per day'
+          completionRate: totalUsers > 0 ? Math.round((completedUsers / totalUsers) * 100) : 0,
+          weeklyGrowth: recentUsers
         },
-        popularLocations: locationStats,
+        popularLocations: locationStats.map(loc => ({
+          location: `${loc._id.neighborhood}, ${loc._id.borough}`,
+          count: loc.count
+        })),
         popularOccupations: occupationStats,
+        profileCompleteness: completenessStats,
         generatedAt: new Date().toISOString()
       }
     });
@@ -326,10 +261,129 @@ const getUserStats = async (req, res) => {
   }
 };
 
+// @desc    Get users list with filters
+// @route   GET /api/users
+// @access  Protected (admin)
+const getUsers = async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 20, 
+      onboardingCompleted, 
+      isActive,
+      occupation,
+      borough 
+    } = req.query;
+
+    const filters = {};
+    
+    if (onboardingCompleted !== undefined) {
+      filters['metadata.onboardingCompleted'] = onboardingCompleted === 'true';
+    }
+    
+    if (isActive !== undefined) {
+      filters['metadata.isActive'] = isActive === 'true';
+    }
+    
+    if (occupation) {
+      filters['professionalInfo.occupation'] = occupation;
+    }
+    
+    if (borough) {
+      filters['housingInfo.selectedLocations.borough'] = borough;
+    }
+
+    const users = await User.find(filters)
+      .select('-account.password -personalInfo.ssn')
+      .sort({ 'metadata.registrationDate': -1 })
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit));
+
+    const total = await User.countDocuments(filters);
+
+    res.json({
+      success: true,
+      data: {
+        users,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(total / parseInt(limit)),
+          totalUsers: total,
+          hasNext: (parseInt(page) * parseInt(limit)) < total,
+          hasPrev: parseInt(page) > 1
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Get users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error retrieving users'
+    });
+  }
+};
+
+// @desc    Delete user
+// @route   DELETE /api/users/:userId
+// @access  Protected (admin or user themselves)
+const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Delete user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error deleting user'
+    });
+  }
+};
+
+// Helper functions
+function checkBudgetCompatibility(user1, user2) {
+  const range1 = user1.getBudgetRange();
+  const range2 = user2.getBudgetRange();
+  
+  if (!range1 || !range2) return false;
+  
+  return !(range1.max < range2.min || range2.max < range1.min);
+}
+
+function calculateLifestyleMatch(user1, user2) {
+  const lifestyle1 = user1.lifestyle || {};
+  const lifestyle2 = user2.lifestyle || {};
+  
+  const factors = ['children', 'pets', 'smoking', 'drinking'];
+  let matches = 0;
+  
+  factors.forEach(factor => {
+    if (lifestyle1[factor] === lifestyle2[factor]) {
+      matches++;
+    }
+  });
+  
+  return Math.round((matches / factors.length) * 100);
+}
+
 module.exports = {
-  registerUser,
   getUserProfile,
   updateUserProfile,
   findCompatibleRoommates,
-  getUserStats
+  getUserStats,
+  getUsers,
+  deleteUser
 };

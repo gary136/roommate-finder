@@ -4,6 +4,47 @@ import { SelectedLocation } from '../types';
 // API Configuration
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
+// ADD NEW TYPES for value-first journey
+export interface QuickSignupData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phone?: string;
+}
+
+export interface OnboardingStepData {
+  step: number;
+  data: {
+    location?: string[];
+    housingSituation?: string;
+    budget?: string;
+    moveInDate?: string;
+    preferences?: {
+      cleanliness?: string;
+      socialLevel?: string;
+      workSchedule?: string;
+    };
+  };
+}
+
+export interface PreviewProfile {
+  id: string;
+  name: string;
+  age: number;
+  occupation: string;
+  location: string[];
+  budget: string;
+  bio: string;
+  preferences: {
+    cleanliness: string;
+    socialLevel: string;
+    workSchedule: string;
+  };
+  compatibility: number;
+  photo?: string;
+}
+
 // Types for API responses
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -40,7 +81,7 @@ export interface CompatibleUser {
   commonLocations: number;
 }
 
-// API Service Class
+// API Service Class - ENHANCED
 class ApiService {
   private baseURL: string;
 
@@ -211,6 +252,76 @@ class ApiService {
       throw error;
     }
   }
+  
+  // NEW METHODS for value-first journey
+
+  // Quick signup - streamlined registration
+  async quickSignup(data: QuickSignupData): Promise<ApiResponse<{ user: any; token: string }>> {
+    const response = await this.request<{ user: any; token: string }>('/auth/quick-signup', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    if (!response.success) {
+      throw new Error(response.message);
+    }
+
+    return response;
+  }
+
+  // Login user
+  async loginUser(credentials: { email: string; password: string }): Promise<ApiResponse<{ user: any; token: string }>> {
+    const response = await this.request<{ user: any; token: string }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+    });
+
+    if (!response.success) {
+      throw new Error(response.message);
+    }
+
+    return response;
+  }
+
+  // Get preview profiles for non-authenticated users
+  async getPreviewProfiles(): Promise<ApiResponse<{ profiles: PreviewProfile[] }>> {
+    const response = await this.request<{ profiles: PreviewProfile[] }>('/preview/profiles');
+    
+    if (!response.success) {
+      throw new Error(response.message);
+    }
+
+    return response;
+  }
+
+  // Get preview stats for landing page
+  async getPreviewStats(): Promise<ApiResponse<{ stats: { totalUsers: number; successRate: number; avgMatchTime: number } }>> {
+    const response = await this.request<{ stats: any }>('/preview/stats');
+    
+    if (!response.success) {
+      throw new Error(response.message);
+    }
+
+    return response;
+  }
+
+  // Update onboarding step
+  async updateOnboardingStep(data: OnboardingStepData, token: string): Promise<ApiResponse<any>> {
+    const response = await this.request<any>('/onboarding/step', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.success) {
+      throw new Error(response.message);
+    }
+
+    return response;
+  }
+
 }
 
 // Create singleton instance
@@ -234,5 +345,20 @@ export const findCompatibleRoommates = (
 export const getStats = () => apiService.getStats();
 
 export const healthCheck = () => apiService.healthCheck();
+
+// NEW CONVENIENCE EXPORTS for value-first journey
+export const authAPI = {
+  quickSignup: (data: QuickSignupData) => apiService.quickSignup(data),
+  login: (email: string, password: string) => apiService.loginUser({ email, password }),
+};
+
+export const previewAPI = {
+  getProfiles: () => apiService.getPreviewProfiles(),
+  getStats: () => apiService.getPreviewStats(),
+};
+
+export const onboardingAPI = {
+  updateStep: (data: OnboardingStepData, token: string) => apiService.updateOnboardingStep(data, token),
+};
 
 export default apiService;

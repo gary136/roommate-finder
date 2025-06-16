@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema({
     },
     phoneNumber: {
       type: String,
-      required: true,
+      required: false,
       trim: true
     }
   },
@@ -45,12 +45,12 @@ const userSchema = new mongoose.Schema({
     },
     ssn: {
       type: String,
-      required: true,
+      required: false,
       // Encrypted SSN storage in production
     },
     age: {
       type: Number,
-      required: true,
+      required: false,
       min: 18,
       max: 100
     },
@@ -64,7 +64,8 @@ const userSchema = new mongoose.Schema({
       enum: [
         'asian', 'black', 'hispanic', 'white', 'middle-eastern',
         'native-american', 'pacific-islander', 'mixed', 'other', 'prefer-not-say'
-      ]
+      ],
+      required: false
     }
   },
 
@@ -73,42 +74,48 @@ const userSchema = new mongoose.Schema({
     selectedLocations: [{
       borough: {
         type: String,
-        required: true
+        required: false
       },
       neighborhood: {
         type: String,
-        required: true
+        required: false
       },
       id: {
         type: String,
-        required: true
+        required: false
       }
     }],    
     // NEW: Rent preferences
     rentPreferences: {
       minRent: {
         type: Number,
-        required: true,
+        required: false,
         min: 0
       },
       maxRent: {
         type: Number,
-        required: true,
+        required: false,
         min: 0
       }
     },
+    // Housing situation (new field)
+    housingSituation: { 
+        type: String, 
+        enum: ['looking', 'have-apartment', 'flexible'],
+        required: false 
+    },
     maxDistanceToMetro: {
       type: String,
-      required: true,
+      required: false,
       enum: ['5', '10', '15', 'no-preference']
     },
     moveInDate: {
       type: Date,
-      required: true
+      required: false
     },
     rentDuration: {
         type: Number,  // Change from String to Number
-        required: true,
+        required: false,
         min: [3, 'Minimum rental duration is 3 months'],
         max: [60, 'Maximum rental duration is 60 months'],
         validate: {
@@ -124,7 +131,7 @@ const userSchema = new mongoose.Schema({
   professionalInfo: {
     occupation: {
       type: String,
-      required: true,
+      required: false,
       enum: [
         'tech', 'finance', 'healthcare', 'education', 'legal',
         'media', 'arts', 'hospitality', 'retail', 'real-estate',
@@ -134,12 +141,12 @@ const userSchema = new mongoose.Schema({
     },
     annualIncome: {
       type: Number,
-      required: true,
+      required: false,
       min: 0
     },
     languages: [{
       type: String,
-      required: true,
+      required: false,
       enum: [
         'english', 'spanish', 'chinese', 'cantonese', 'russian',
         'korean', 'bengali', 'hindi', 'french', 'arabic',
@@ -153,32 +160,32 @@ const userSchema = new mongoose.Schema({
   lifestyle: {
     children: {
       type: String,
-      required: true,
+      required: false,
       enum: ['no', 'will-have', 'yes']
     },
     pets: {
       type: String,
-      required: true,
+      required: false,
       enum: ['no', 'will-have', 'yes']
     },
     smoking: {
       type: String,
-      required: true,
+      required: false,
       enum: ['no', 'sometimes', 'often']
     },
     drinking: {
       type: String,
-      required: true,
+      required: false,
       enum: ['no', 'sometimes', 'often']
     },
     weed: {
       type: String,
-      required: true,
+      required: false,
       enum: ['no', 'sometimes', 'often']
     },
     drugs: {
       type: String,
-      required: true,
+      required: false,
       enum: ['no', 'sometimes', 'often']
     }
   },
@@ -212,7 +219,25 @@ const userSchema = new mongoose.Schema({
   metadata: {
     profileCompleted: {
       type: Boolean,
-      default: true
+      default: false
+    },
+    // NEW: Onboarding tracking fields
+    onboardingCompleted: {
+      type: Boolean,
+      default: false
+    },
+    profileCompleteness: {
+      type: Number,
+      default: 25,      // 25% for basic signup
+      min: 0,
+      max: 100
+    },
+    onboardingStep: {
+      type: Number,
+      default: 0
+    },
+    onboardingCompletedAt: {
+      type: Date
     },
     isActive: {
       type: Boolean,
@@ -307,6 +332,63 @@ userSchema.methods.calculateLocationMatch = function(otherUser) {
   return commonLocations.length / totalUniqueLocations;
 };
 
+// ========================================
+// NEW METHODS for onboarding tracking
+// ========================================
+
+// Calculate profile completeness
+userSchema.methods.calculateCompleteness = function() {
+  let completeness = 35; // ⬅️ UPDATED: Higher base due to required username + sex
+  
+  // Account info
+  if (this.account.phoneNumber) completeness += 5;
+  
+  // Personal info
+  if (this.personalInfo.age) completeness += 10;
+  
+  // Housing info
+  if (this.housingInfo.selectedLocations && this.housingInfo.selectedLocations.length > 0) completeness += 15;
+  if (this.housingInfo.housingSituation) completeness += 10;
+  if (this.housingInfo.rentPreferences && this.housingInfo.rentPreferences.minRent && this.housingInfo.rentPreferences.maxRent) completeness += 10;
+  
+  // Professional info
+  if (this.professionalInfo.occupation) completeness += 5;
+  if (this.professionalInfo.languages && this.professionalInfo.languages.length > 0) completeness += 5;
+  if (this.professionalInfo.annualIncome) completeness += 5;
+  
+  // Lifestyle
+  const lifestyleFields = ['children', 'pets', 'smoking', 'drinking'];
+  const completedLifestyle = lifestyleFields.filter(field => this.lifestyle[field]).length;
+  completeness += (completedLifestyle / lifestyleFields.length) * 15;
+  
+  return Math.min(completeness, 100);
+};
+
+// Get budget range as string (for frontend compatibility)
+userSchema.methods.getBudgetRange = function() {
+  if (this.housingInfo.rentPreferences && 
+      this.housingInfo.rentPreferences.minRent && 
+      this.housingInfo.rentPreferences.maxRent) {
+    return `$${this.housingInfo.rentPreferences.minRent.toLocaleString()}-${this.housingInfo.rentPreferences.maxRent.toLocaleString()}`;
+  }
+  return null;
+};
+
+// Check if user can see full profiles
+userSchema.methods.canViewFullProfiles = function() {
+  return this.metadata.onboardingCompleted;
+};
+
+// Get user's selected neighborhoods as simple array (for frontend)
+userSchema.methods.getSelectedNeighborhoods = function() {
+  return this.housingInfo.selectedLocations.map(loc => ({
+    value: loc.id,
+    label: `${loc.neighborhood}, ${loc.borough}`,
+    borough: loc.borough,
+    neighborhood: loc.neighborhood
+  }));
+};
+
 // Indexes for better query performance
 userSchema.index({ 'account.email': 1 });
 userSchema.index({ 'account.username': 1 });
@@ -314,5 +396,9 @@ userSchema.index({ 'housingInfo.selectedLocations.borough': 1 });
 userSchema.index({ 'housingInfo.selectedLocations.neighborhood': 1 });
 userSchema.index({ 'professionalInfo.occupation': 1 });
 userSchema.index({ 'metadata.registrationDate': -1 });
+
+// NEW: Add indexes for onboarding tracking
+userSchema.index({ 'metadata.onboardingCompleted': 1 });
+userSchema.index({ 'metadata.profileCompleteness': 1 });
 
 module.exports = mongoose.model('User', userSchema);
