@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MousePosition } from '../types';
+import { MousePosition } from '../../types';
 
 const BackgroundShapes: React.FC = () => {
   const [mousePosition, setMousePosition] = useState<MousePosition>({ x: 0, y: 0 });
